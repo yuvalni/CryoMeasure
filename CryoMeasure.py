@@ -44,7 +44,7 @@ def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
         file_path = os.path.join(path,"{}_RT".format(file_name)+str(i)+".csv")
         i = i +1
     csv_file = open(file_path, 'w', newline='')
-    fieldnames = ['Temperature','Resistance 1 [Ohm]','current 1 [mA]','Resistance 2 [Ohm]','current 2 [mA]','Resistance 3 [Ohm]','current 3 [mA]','Resistance 4 [Ohm]','Time']
+    fieldnames = ['Temperature','Resistance 1 [Ohm]','current 1 [mA]','Resistance 2 [Ohm]','current 2 [mA]','Resistance 3 [Ohm]','current 3 [mA]','Resistance 4 [Ohm]','current 4 [mA]','Time']
     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
     writer.writeheader()
     return csv_file, writer
@@ -213,14 +213,14 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
     #eel.spawn(send_measure_data_to_page) ## start messaging function to the page
 
     #NO channel is defined!
-    
+
     while not halt_meas.is_set():
         # get new ch list
         data = {}
         data["Temperature"] = meter_196.getTemp()
         data["Time"] = dt.now()
         for channel in Channel_list:
-            _Channel = Switch_to(channel, Switch)
+            Switch_to(channel, Switch)
             R, I = measure_resistance(keithley)
             data["Resistance {0} [Ohm]".format(channel)] = R
             data["current {0} [mA]".format(channel)] = I

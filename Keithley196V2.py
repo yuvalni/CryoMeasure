@@ -7,7 +7,7 @@ class Keithley196():
         self.poly_fit = [0.0,1.0,2.0] #a,b,c,d of polynom
         # set range!!
 
-    def poly(self,x):
+    def poly(self, x):
         ans = 0
         for n, a in enumerate(self.poly_fit):
             ans += a * x ** n
