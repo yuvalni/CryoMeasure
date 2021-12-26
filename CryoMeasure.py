@@ -37,19 +37,20 @@ eel.init('web')
 
 def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
     logging.debug('path is {}'.format(path))
+    print(path)
     file_path = os.path.join(path,"{}_RT.csv".format(file_name))
     i=1
     while os.path.exists(file_path):
         file_path = os.path.join(path,"{}_RT".format(file_name)+str(i)+".csv")
         i = i +1
-    csv_file = open('names.csv', 'w', newline='')
+    csv_file = open(file_path, 'w', newline='')
     fieldnames = ['Temperature','Resistance 1 [Ohm]','current 1 [mA]','Resistance 2 [Ohm]','current 2 [mA]','Resistance 3 [Ohm]','current 3 [mA]','Resistance 4 [Ohm]','Time']
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
     writer.writeheader()
     return csv_file, writer
 
 
-def initialize_Keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.001,address="GPIB0::16::INSTR"):
+def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.001,address="GPIB0::16::INSTR"):
     V_comp = float(V_comp)
     nplc = float(nplc)
     I = float(I)
@@ -201,7 +202,7 @@ def halt_measurement():
 def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_196):
     rate = float(rate)
     logging.info('start cont. meas.')
-    eel.set_meas_status('start cont. meas.')
+    #eel.set_meas_status('start cont. meas.')
     stop_RT.clear()
     halt_meas.clear()
     csv_file, writer = initialize_file(sample_name)
@@ -210,9 +211,13 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
     print('start measurement')
     logging.debug('start measurement')
     #eel.spawn(send_measure_data_to_page) ## start messaging function to the page
+
+    #NO channel is defined!
+    
     while not halt_meas.is_set():
+        # get new ch list
         data = {}
-        data["Temperature"] = measure_Temp(meter_196)
+        data["Temperature"] = meter_196.getTemp()
         data["Time"] = dt.now()
         for channel in Channel_list:
             _Channel = Switch_to(channel, Switch)
