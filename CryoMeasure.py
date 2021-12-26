@@ -37,16 +37,16 @@ eel.init('web')
 def initialize_file(file_name,path='defulet_path'):
     #path = os.path.join(data_path,file_name+'_'+date.today().strftime('%d_%m_%Y'))
     logging.debug('path is {}'.format(path))
-    if not os.path.exists(path):
-        os.mkdir(path)
-        logging.debug('created folder for file.')
     file_path = os.path.join(path,"RT.csv")
     i=1
     while os.path.exists(file_path):
         file_path = os.path.join(path,"RT"+str(i)+".csv")
         i = i +1
-    pd.DataFrame(columns = ['Time','Temperature_A[k]','Temperature_B','Resistance[Ohm]','I[Amps]','Channel']).to_csv(file_path)
-    return file_path
+    csv_file = open('names.csv', 'w', newline='')
+    fieldnames = ['Temperature','Resistance 1 [Ohm]','current 1 [mA]','Resistance 2 [Ohm]','current 2 [mA]','Resistance 3 [Ohm]','current 3 [mA]','Resistance 4 [Ohm]','Time']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    return csv_file, writer
 
 
 def initialize_Keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.001,address="GPIB0::16::INSTR"):
@@ -204,27 +204,32 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
     eel.set_meas_status('start cont. meas.')
     stop_RT.clear()
     halt_meas.clear()
-    file_name = initialize_file(sample_name)
+    csv_file, writer = initialize_file(sample_name)
 #    Switch = initialize_Switch(Channel_list[0])
     keithley = initialize_keithley2400(current,voltage_comp,nplc_speed) # return keith2400 object
     print('start measurement')
     logging.debug('start measurement')
     eel.spawn(send_measure_data_to_page) ## start messaging function to the page
+    data = np.zeros(4)
     while not halt_meas.is_set():
+        Temp = measure_Temp(meter_196)
+        Time = dt.now()
+
         for i in range(len(Channel_list)):
             Channel = Switch_to(Channel_list[i], Switch)
-            Time = dt.now()
             R, I = measure_resistance(keithley)
-            TempA = 0
-            Temp = measure_Temp(meter_196)
-            q.put((Temp, R))  # sending to gui
-            new_row = pd.DataFrame({'Time': [Time], 'Temperature_B[k]': [Temp], 'Temperature_A[k]': [TempA], 'Resistance[Ohm]': [R],'I[Amps]': [I], 'Channel': [Channel]}).to_csv(file_name, mode='a', header=False,columns=['Time', 'Temperature_B[k]', 'Temperature_A[k]','Resistance[Ohm]', 'I[Amps]', 'Channel'])  # maybe keep file open?
-            del new_row
-            eel.sleep(rate)
+            data[i] = (R,I)
+
+        q.put((Temp, R, i))
+        ###fieldnames = ['Temperature', 'Resistance 1 [Ohm]', 'current 1 [mA]', 'Resistance 2 [Ohm]', 'current 2 [mA]',
+          ##            'Resistance 3 [Ohm]', 'current 3 [mA]', 'Resistance 4 [Ohm]', 'Time']
+        writer.writerow({'T': Temp, '' })
+        eel.sleep(rate)
 
     halt_meas.clear()
     stop_RT.set()
     eel.set_meas_status('idle.')
+    csv_file.close()
 
     def send_measure_data_to_page():
         logging.debug('start sending')
