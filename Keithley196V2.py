@@ -5,6 +5,7 @@ class Keithley196():
     def __init__(self,address='GPIB0::7::INSTR'):
         self.inst = pyvisa.ResourceManager().open_resource(address)
         self.poly_fit = [0.0,1.0,2.0] #a,b,c,d of polynom
+        # set range!!
 
     def poly(self,x):
         ans = 0
