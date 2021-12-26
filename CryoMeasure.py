@@ -7,10 +7,11 @@ import random
 import numpy as np
 import logging
 import os
-from datetime import date
+from time import sleep
 from datetime import datetime as dt
 from pymeasure.instruments.keithley import Keithley2400
 from Keithley196V2 import Keithley196 as K196
+from Switch7001 import Switch
 import csv
 
 q = Queue()
@@ -24,6 +25,7 @@ stop_T = Event()
 error = Event()
 error_name = 'No error'
 cooling_timeout = 3600
+Channel_list = []
 eel.init('web')
 
 #Main Script
@@ -51,6 +53,7 @@ def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
 
 
 def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.001,address="GPIB0::16::INSTR"):
+    assert nplc > 0.01 and nplc <= 10
     V_comp = float(V_comp)
     nplc = float(nplc)
     I = float(I)
@@ -58,13 +61,17 @@ def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.0
     sourcemeter.reset()
     #setting current params
     sourcemeter.use_front_terminals()
+    eel.sleep(10/1000)
     sourcemeter.wires = 4  # set to 4 wires
+    eel.sleep(10 / 1000)
     sourcemeter.apply_current(current_range,V_comp)
+    eel.sleep(10 / 1000)
     sourcemeter.source_current = I
+    eel.sleep(10 / 1000)
 
     #setting voltage read params
     sourcemeter.measure_voltage(nplc,voltage_range,False)
-    sourcemeter.beep(400, 1)
+    sleep(10 / 1000)
     sourcemeter.write(":SYST:BEEP:STAT OFF")
 
     #Checking for errors
@@ -74,15 +81,16 @@ def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.0
     return sourcemeter
 
 def initialize_Switch(address="GPIB::16"):
-    Switch = Switch(host="COM1")
-    Switch.initialize()
-    Switch.Open_all_Channels()
+    switch = Switch()
+    switch.initialize()
+    switch.Open_all_Channels()
+    #TODO: FIX errors things
 
     # Checking for errors
-    error_name = sourcemeter.error #need to change to the right code
-    if not error_name[1] == 'No error':
-        error.set()
-    return Switch
+    #error_name = sourcemeter.error #need to change to the right code
+    #if not error_name[1] == 'No error':
+    #    error.set()
+    return switch
 
 
 def initialize_Keithley196(voltage_range = 0.001,address="GPIB::16"):
@@ -97,10 +105,10 @@ def initialize_Keithley196(voltage_range = 0.001,address="GPIB::16"):
 
 def measure_resistance(sourcemeter):
     sourcemeter.enable_source() #should set current on
-    eel.sleep(0.1)
+    eel.sleep(0.001)
     V_p = sourcemeter.voltage
     sourcemeter.source_current = - sourcemeter.source_current
-    eel.sleep(0.1)
+    eel.sleep(0.001)
     V_m = sourcemeter.voltage
     I = -sourcemeter.source_current #needs to measure not just say what is configure!!
     sourcemeter.source_current = I
@@ -185,7 +193,7 @@ def Get_stable_temp(k196,rate,meas_num,start_temp,Std_bound):
 
 def Switch_to(ch, Switch):
     Switch.Open_all_Channels()
-    Switch.close(ch)
+    Switch.Close_Channel(ch)
 
     # Checking for errors
     error_name = Switch.read_error()  # need to change to the right code
@@ -206,21 +214,22 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
     stop_RT.clear()
     halt_meas.clear()
     csv_file, writer = initialize_file(sample_name)
-#    Switch = initialize_Switch(Channel_list[0])
+    switch = initialize_Switch()
     keithley = initialize_keithley2400(current,voltage_comp,nplc_speed) # return keith2400 object
     print('start measurement')
     logging.debug('start measurement')
     #eel.spawn(send_measure_data_to_page) ## start messaging function to the page
 
-    #NO channel is defined!
 
+    Channel_list = [1,2,3,4] #this is temporary
     while not halt_meas.is_set():
         # get new ch list
         data = {}
         data["Temperature"] = meter_196.getTemp()
         data["Time"] = dt.now()
-        for channel in Channel_list:
-            Switch_to(channel, Switch)
+        _Channel_list = Channel_list # update local channel list from global only before and after for loop
+        for channel in _Channel_list:
+            Switch_to(channel, switch)
             R, I = measure_resistance(keithley)
             data["Resistance {0} [Ohm]".format(channel)] = R
             data["current {0} [mA]".format(channel)] = I
