@@ -8,8 +8,8 @@ from device import Device
 class K196(Device):
     mode = None
 
-    def __init__(self,host, connection_type="usb" ):
-        super(K196, self).__init__(connection_type=connection_type, host=host)
+    def __init__(self,host, connection_type="usb",port=1):
+        super(K196, self).__init__(connection_type=connection_type, host=host,port=port)
 
     def userCmd(self, cmd):
         print('user cmd: %s' % cmd)

@@ -1,5 +1,8 @@
 import sys
+import vxi11
+from pylink import TCPLink, UDPLink
 import serial
+from prologix import Prologix
 
 from time import sleep
 
@@ -11,12 +14,33 @@ class Device(object):
     host = None
     port = None
 
-    def __init__(self, connection_type, host):
+    def __init__(self, connection_type, host, port):
         self.connection_type = connection_type
         self.host = host
+        self.port = port
 
         if (connection_type == 'serial'):
-             self.com = serial.Serial(host, 9600)
+            self.com = TCPLink(host, port)
+        elif (connection_type == 'lan'):
+            self.com = TCPLink(host, port)
+        elif (connection_type == 'lan_udp'):
+            self.com = UDPLink(host, port)
+            self.com.open()
+            self.com._socket.bind(('', port))
+            self.com._socket.settimeout(0.1)
+            self.com.settimeout(0.1)
+        elif (connection_type == 'gpib'):
+            sPort = 'gpib0,%i' % port
+            self.com = vxi11.Instrument(host, sPort)
+        elif (connection_type == 'gpibSerial'):
+            sPort = 'COM1,488'
+            self.com = vxi11.Instrument(host, sPort)
+            # This probably will solely work with Keysight E5810B
+        elif (connection_type == 'usb'):
+            self.com = serial.Serial(host, 9600)
+        elif (connection_type == 'prologix'):
+            self.com = Prologix(host, port)
+            self.com.open()
         else:
             pass
 
@@ -84,4 +108,3 @@ class Device(object):
 
     def printOutput(self, string):
         sys.stdout.write(string+'\r\n')
-
