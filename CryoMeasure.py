@@ -11,6 +11,7 @@ from datetime import date
 from datetime import datetime as dt
 from pymeasure.instruments.keithley import Keithley2400
 from Keithley196V2 import Keithley196 as K196
+import csv
 
 q = Queue()
 q_temp = Queue()
@@ -34,13 +35,12 @@ eel.init('web')
     #mean_Temp, std_temp = Get_stable_temp(meter_196,rate,meas_num,start_temp,Std_bound)
  # measuring
 
-def initialize_file(file_name,path='defulet_path'):
-    #path = os.path.join(data_path,file_name+'_'+date.today().strftime('%d_%m_%Y'))
+def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
     logging.debug('path is {}'.format(path))
-    file_path = os.path.join(path,"RT.csv")
+    file_path = os.path.join(path,"{}_RT.csv".format(file_name))
     i=1
     while os.path.exists(file_path):
-        file_path = os.path.join(path,"RT"+str(i)+".csv")
+        file_path = os.path.join(path,"{}_RT".format(file_name)+str(i)+".csv")
         i = i +1
     csv_file = open('names.csv', 'w', newline='')
     fieldnames = ['Temperature','Resistance 1 [Ohm]','current 1 [mA]','Resistance 2 [Ohm]','current 2 [mA]','Resistance 3 [Ohm]','current 3 [mA]','Resistance 4 [Ohm]','Time']
@@ -209,21 +209,19 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
     keithley = initialize_keithley2400(current,voltage_comp,nplc_speed) # return keith2400 object
     print('start measurement')
     logging.debug('start measurement')
-    eel.spawn(send_measure_data_to_page) ## start messaging function to the page
-    data = np.zeros(4)
+    #eel.spawn(send_measure_data_to_page) ## start messaging function to the page
     while not halt_meas.is_set():
-        Temp = measure_Temp(meter_196)
-        Time = dt.now()
-
-        for i in range(len(Channel_list)):
-            Channel = Switch_to(Channel_list[i], Switch)
+        data = {}
+        data["Temperature"] = measure_Temp(meter_196)
+        data["Time"] = dt.now()
+        for channel in Channel_list:
+            _Channel = Switch_to(channel, Switch)
             R, I = measure_resistance(keithley)
-            data[i] = (R,I)
+            data["Resistance {0} [Ohm]".format(channel)] = R
+            data["current {0} [mA]".format(channel)] = I
 
-        q.put((Temp, R, i))
-        ###fieldnames = ['Temperature', 'Resistance 1 [Ohm]', 'current 1 [mA]', 'Resistance 2 [Ohm]', 'current 2 [mA]',
-          ##            'Resistance 3 [Ohm]', 'current 3 [mA]', 'Resistance 4 [Ohm]', 'Time']
-        writer.writerow({'T': Temp, '' })
+        #eel.send_data(data) #we need to write this function
+        writer.writerow(data) #this takes a dictionary and fill in the columns
         eel.sleep(rate)
 
     halt_meas.clear()
