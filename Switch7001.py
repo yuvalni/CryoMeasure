@@ -6,7 +6,8 @@ class Switch():
         self.inst = pyvisa.ResourceManager().open_resource(address)
 
     def initialize(self):
-        self.inst.write(':syst: pres')
+        #TODO: What is this for?
+        #self.inst.write(':syst: pres')
         self.inst.write('*CLS')
 
     def Open_all_Channels(self):
