@@ -186,7 +186,7 @@ def halt_measurement():
     logging.info('sending stop command.')
     halt_meas.set()
 
-
+@eel.expose
 def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_196):
     rate = float(rate)
     logging.info('start cont. meas.')
