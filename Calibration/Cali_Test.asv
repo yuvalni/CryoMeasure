@@ -1,0 +1,9 @@
+p_Cernox = coeff
+R = linspace(81,260,1000);
+T = polyval(p_Cernox,R);
+plot(R,T)
+hold
+plot(R_Cernox,Temp_Cernox)
+legend('Cal','Real')
+figure
+scatter(R,interp1(R_Cernox,Temp_Cernox,R)-T)
