@@ -26,6 +26,7 @@ error = Event()
 error_name = 'No error'
 cooling_timeout = 3600
 Channel_list = []
+
 eel.init('web')
 
 #Main Script
@@ -92,15 +93,6 @@ def initialize_Switch(address="GPIB::16"):
     #    error.set()
     return switch
 
-
-def initialize_Keithley196(voltage_range = 0.001,address="GPIB::16"):
-    k196 = K196(host="COM1")
-    k196.initialize(sMode='V')
-    # Checking for errors
-    error_name = k196.getStatus() #need to change to the right code
-    if not error_name[1] == 'No error':
-        error.set()
-    return k196
 
 
 def measure_resistance(sourcemeter,AC=True):
@@ -203,6 +195,7 @@ def halt_measurement():
     halt_meas.set()
 
 
+@eel.expose
 def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_196,AC=True):
     rate = float(rate)
     logging.info('start cont. meas.')

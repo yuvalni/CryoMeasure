@@ -3,7 +3,8 @@
   <head>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <link rel="stylesheet" href="style.css">
-
+    <script type="text/javascript" src="/eel.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.8.3.min.js"></script>
 
 
     <meta charset="utf-8">
@@ -19,9 +20,34 @@
         </div>
 
         <div class="plot border rounded bg-light">
-          <h1>PLOT</h1>
+          <div id="data_plot"></div>
         </div>
 
+        <script type="text/javascript">
+        var graphDiv = document.getElementById('data_plot')
+        var data = [{
+                    x: [1999, 2000, 2001, 2002],
+                    y: [10, 15, 13, 17],
+                    type: 'scatter'
+                  },
+                  {  x: [1999, 2000, 2001, 2002],
+                    y: [2, 45, 8, 6],
+                    type: 'scatter'}];
+
+                  var layout = {
+                    title: 'Sales Growth',
+                    xaxis: {
+                      title: 'Year',
+
+                      zeroline: false
+                    },
+                    yaxis: {
+                      title: 'Percent',
+                      showline: false
+                    }
+                  };
+                  Plotly.newPlot(graphDiv, data, layout);
+        </script>
         <div class="resistivity col-flex rounded border border-secondary bg-light">
 
           <div class="row g-3 align-items-center">
@@ -116,8 +142,20 @@
           </div>
         </div>
 
+
+      <script type="text/javascript">
+      //start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_196)
+        function start_cont_measure(){
+          //get all parameters from page
+
+          //call the python function
+          //eel.start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_196)
+        }
+
+      </script>
+
         <div class="actions rounded border border-secondary bg-light">
-          <button type="button" class="btn btn-outline-success btn-lg">Start</button>
+          <button type="button" class="btn btn-outline-success btn-lg" onclick="start_cont_measure()">Start</button>
           <button type="button" class="btn btn-outline-danger btn-lg">Stop</button>
         </div>
     </div>
