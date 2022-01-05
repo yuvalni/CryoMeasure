@@ -29,9 +29,9 @@ class Keithley196():
     def getTemp(self):
         #assuming 10 uA - as calibration
         voltage = self.get_voltage()
-        if voltage > self.poly_low_limits[0] * 10**5
+        if voltage > self.poly_low_limits[0] * 10**-5
             return self.poly(voltage*(10**5), self.poly_fit_LowTemp)
-        elif voltage > self.poly_med_limits[0] * 10**5:
+        elif voltage > self.poly_med_limits[0] * 10**-5:
             return self.poly(voltage * (10 ** 5), self.poly_fit_MedTemp)
         else:
             return self.poly(voltage * (10 ** 5), self.poly_fit_HighTemp)
