@@ -25,7 +25,7 @@ stop_T = Event()
 error = Event()
 error_name = 'No error'
 cooling_timeout = 3600
-Channel_list = []
+Channel_list = [1,2,3,4]
 
 eel.init('web')
 
@@ -37,6 +37,16 @@ eel.init('web')
  # geting rady to measure
     #mean_Temp, std_temp = Get_stable_temp(meter_196,rate,meas_num,start_temp,Std_bound)
  # measuring
+meter_196 = K196()
+@eel.expose
+def change_channel(id,checked):
+    if checked:
+        Channel_list.append(id)
+        Channel_list.sort()
+    else:
+        Channel_list.remove(id)
+
+
 
 def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
     logging.debug('path is {}'.format(path))

@@ -35,19 +35,35 @@
                     type: 'scatter'}];
 
                   var layout = {
-                    title: 'Sales Growth',
+
                     xaxis: {
-                      title: 'Year',
+                      title: 'Temperature',
 
                       zeroline: false
                     },
                     yaxis: {
-                      title: 'Percent',
+                      title: 'Resistance [Ohm]',
                       showline: false
                     }
                   };
                   Plotly.newPlot(graphDiv, data, layout);
         </script>
+
+
+
+
+
+        <script type="text/javascript">
+        function set_transport(){
+          current = parseFloat(document.getElementById("Current").value)
+          compliance = parseFloat(document.getElementById("Compliance").value)
+          nplc = parseFloat(document.getElementById("NPLC").value)
+
+          console.log(current,compliance,nplc)
+        }
+
+        </script>
+
         <div class="resistivity col-flex rounded border border-secondary bg-light">
 
           <div class="row g-3 align-items-center">
@@ -55,8 +71,11 @@
               <label for="Current" class="col-form-label">Current</label>
             </div>
             <div class="col-auto">
-              <input type="text" id="Current" class="form-control" aria-describedby="TempSetPoint">
+              <input type="number" id="Current" value=0.1 min=-100 max=100 step=0.01 class="form-control" aria-describedby="TempSetPoint">
             </div>
+            <div class="col-auto">
+            [mA]
+          </div>
           </div>
 
           <div class="row g-3 align-items-center">
@@ -64,28 +83,23 @@
               <label for="Compliance" class="col-form-label">Voltage Compliance</label>
             </div>
             <div class="col-auto">
-              <input type="text" id="Current" class="form-control" aria-describedby="TempSetPoint">
+              <input type="number" min=0 max=8 step=0.1 id="Compliance" value=2 class="form-control" aria-describedby="TempSetPoint">
             </div>
+            <div class="col-auto">
+            [V]
+          </div>
           </div>
 
           <div class="row g-3 align-items-center">
             <div class="col-auto">
-              <label for="Current" class="col-form-label">Current</label>
+              <label for="NPLC" min=0.001 max=10 class="col-form-label">NPLC</label>
             </div>
             <div class="col-auto">
-              <input type="text" id="Current" class="form-control" aria-describedby="TempSetPoint">
+              <input type="number" id="NPLC" value=2 class="form-control" aria-describedby="TempSetPoint">
             </div>
           </div>
 
-          <div class="row g-3 align-items-center">
-            <div class="col-auto">
-              <label for="Current" class="col-form-label">Current</label>
-            </div>
-            <div class="col-auto">
-              <input type="text" id="Current" class="form-control" aria-describedby="TempSetPoint">
-            </div>
-          </div>
-          <button type="button" class="btn btn-outline-primary btn-lg">Set</button>
+          <button type="button" class="btn btn-outline-primary btn-lg" onclick="set_transport()">Set</button>
         </div>
 
         <div class="Temperature col-flex rounded border border-secondary bg-light">
@@ -111,30 +125,58 @@
           <button type="button" class="btn btn-outline-primary btn-lg">Set</button>
         </div>
 
+        <script type="text/javascript">
+        function change_channel(e){
+          console.log(e.id,e.checked)
+          id = parseFloat(e.id.replace('ch',''))
+
+          //eel.change_channel(id,e.checked)
+        }
+
+        function set_channel(){
+          const channels = [];
+          if (document.getElementById("ch1").checked){
+            channels.push(1)
+          }
+          if (document.getElementById("ch2").checked){
+            channels.push(2)
+          }
+          if (document.getElementById("ch3").checked){
+            channels.push(3)
+          }
+          if (document.getElementById("ch4").checked){
+            channels.push(4)
+          }
+          //eel.set_channels(channels)
+          console.log(channels)
+        }
+        </script>
         <div class="chSelect rounded border border-secondary bg-light">
           <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" role="switch" id="ch1" checked>
+          <input class="form-check-input" type="checkbox" role="switch" id="ch1" onchange="change_channel(this)" checked>
           <label class="form-check-label" for="ch1">1</label>
           </div>
 
           <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" role="switch" id="ch2" checked>
+          <input class="form-check-input" type="checkbox" role="switch" id="ch2" onchange="change_channel(this)" checked>
           <label class="form-check-label" for="ch2">2</label>
           </div>
           <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" role="switch" id="ch3" checked>
+          <input class="form-check-input" type="checkbox" role="switch" id="ch3" onchange="change_channel(this)" checked>
           <label class="form-check-label" for="ch3">3</label>
           </div>
           <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" role="switch" id="ch4" checked>
+          <input class="form-check-input" type="checkbox" role="switch" id="ch4" onchange="change_channel(this)" checked>
           <label class="form-check-label" for="ch4">4</label>
           </div>
+        <button type="button" class="btn btn-outline-primary" onclick="set_channel()">Set</button>
+
         </div>
 
         <div class="FileMenu rounded border border-secondary bg-light">
           <div class="row">
             <div class="col">
-              <input type="text" class="form-control" placeholder="Sample name">
+              <input type="text" class="form-control" placeholder="Sample name" id="sample_name">
             </div>
             <div class="col">
               <input type="file" directory/>
@@ -147,9 +189,13 @@
       //start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_196)
         function start_cont_measure(){
           //get all parameters from page
-
+          current = parseFloat(document.getElementById("Current").value)
+          compliance = parseFloat(document.getElementById("Compliance").value)
+          nplc = parseFloat(document.getElementById("NPLC").value)
+          sample_name = document.getElementById("sample_name").value
           //call the python function
-          //eel.start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_196)
+          rate = 0.01
+          eel.start_cont_measure(current,compliance,nplc,sample_name,rate)
         }
 
       </script>
