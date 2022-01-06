@@ -1,4 +1,4 @@
 from Keithley196V2 import Keithley196
 k196 = Keithley196()
 from CryoMeasure import *
-start_cont_measure(0.001,2,10,'yuval_test',0.01,k196)
+start_cont_measure(10**-5,2,5,'third_cooling_turbo',0.05,k196,AC=False)

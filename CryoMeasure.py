@@ -57,13 +57,13 @@ def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
         file_path = os.path.join(path,"{}_RT".format(file_name)+str(i)+".csv")
         i = i +1
     csv_file = open(file_path, 'w', newline='')
-    fieldnames = ['Temperature','Resistance 1 [Ohm]','current 1 [mA]','Resistance 2 [Ohm]','current 2 [mA]','Resistance 3 [Ohm]','current 3 [mA]','Resistance 4 [Ohm]','current 4 [mA]','Time']
+    fieldnames = ['Temperature','Resistance 1 [Ohm]','current 1 [mA]','Resistance 2 [Ohm]','current 2 [mA]','Resistance 3 [Ohm]','current 3 [mA]','Resistance 4 [Ohm]','current 4 [mA]','Time','Cernox_Resistance [Ohm]']
     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
     writer.writeheader()
     return csv_file, writer
 
 
-def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.001,address="GPIB0::16::INSTR"):
+def initialize_keithley2400(I,V_comp,nplc,current_range=0.001,voltage_range = 0.1,address="GPIB0::16::INSTR"):
     assert nplc > 0.01 and nplc <= 10
     V_comp = float(V_comp)
     nplc = float(nplc)
@@ -81,7 +81,7 @@ def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.0
     eel.sleep(10 / 1000)
 
     #setting voltage read params
-    sourcemeter.measure_voltage(nplc,voltage_range,False)
+    sourcemeter.measure_voltage(nplc,voltage_range,True)
     sleep(10 / 1000)
     sourcemeter.write(":SYST:BEEP:STAT OFF")
 
@@ -104,10 +104,18 @@ def initialize_Switch(address="GPIB::16"):
     return switch
 
 
-def measure_resistance(sourcemeter):
+
+def measure_resistance(sourcemeter,AC=True):
     sourcemeter.enable_source() #should set current on
     eel.sleep(0.001)
     V_p = sourcemeter.voltage
+    I = sourcemeter.source_current  # needs to measure not just say what is configure!!
+    if not AC:
+        sourcemeter.disable_source()
+        if I == 0:
+            return -999, 0
+        else:
+            return (V_p / I), I
     sourcemeter.source_current = - sourcemeter.source_current
     eel.sleep(0.001)
     V_m = sourcemeter.voltage
@@ -196,8 +204,9 @@ def halt_measurement():
     logging.info('sending stop command.')
     halt_meas.set()
 
+
 @eel.expose
-def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate):
+def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_196,AC=True):
     rate = float(rate)
     logging.info('start cont. meas.')
     #eel.set_meas_status('start cont. meas.')
@@ -211,19 +220,22 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate):
     #eel.spawn(send_measure_data_to_page) ## start messaging function to the page
 
 
-    Channel_list = [1,2,3,4] #this is temporary
+    Channel_list = [1] #this is temporary
     while not halt_meas.is_set():
         # get new ch list
         data = {}
         data["Temperature"] = meter_196.getTemp()
+        data["Cernox_Resistance [Ohm]"] = meter_196.get_voltage() * 10**5
+        print(data["Temperature"])
         data["Time"] = dt.now()
         _Channel_list = Channel_list # update local channel list from global only before and after for loop
         for channel in _Channel_list:
             Switch_to(channel, switch)
-            R, I = measure_resistance(keithley)
+            R, I = measure_resistance(keithley,AC)
+
             data["Resistance {0} [Ohm]".format(channel)] = R
             data["current {0} [mA]".format(channel)] = I
-
+            print(data["Resistance {0} [Ohm]".format(channel)])
         #eel.send_data(data) #we need to write this function
         writer.writerow(data) #this takes a dictionary and fill in the columns
         eel.sleep(rate)
