@@ -9,14 +9,34 @@
 
     <meta charset="utf-8">
     <title></title>
+
+
+    <script type="text/javascript">
+    eel.expose(update_channel)
+    function update_channel(R,T,ch){
+      var update = {
+          x:  [[T]],
+          y: [[R]]
+          }
+          Plotly.extendTraces('data_plot', update, [ch-1])
+    }
+
+      eel.expose(send_T_data)
+      function send_T_data(T){
+        T_div = document.getElementById('current_Temp');
+        T_div.innerText = T;
+        }
+    </script>
   </head>
   <body>
     <div class="gridcontainer">
 
         <div class="status row-flex rounded border border-secondary bg-light">
-          <span class="badge bg-danger">Not connected</span>
-          <span class="badge bg-warning">Compliance</span>
-          <span class="badge bg-success">Temperature stable</span>
+          <span class="badge bg-danger" hidden >Not connected</span>
+          <span class="badge bg-warning" hidden>Compliance</span>
+          <span class="badge bg-success" hidden >Temperature stable</span>
+          <span class="badge bg-success">Temperature: <div id="current_Temp"></div> [K]</span>
+
         </div>
 
         <div class="plot border rounded bg-light">
@@ -26,13 +46,24 @@
         <script type="text/javascript">
         var graphDiv = document.getElementById('data_plot')
         var data = [{
-                    x: [1999, 2000, 2001, 2002],
-                    y: [10, 15, 13, 17],
-                    type: 'scatter'
+                    x: [],
+                    y: [],
+                    type: 'scatter',
+                    name: 'ch 1'
                   },
-                  {  x: [1999, 2000, 2001, 2002],
-                    y: [2, 45, 8, 6],
-                    type: 'scatter'}];
+                  {  x: [],
+                    y: [],
+                    type: 'scatter',
+                  name: 'ch 2'},
+                    {  x: [],
+                      y: [],
+                      type: 'scatter',
+                    name: 'ch 3'},
+                      {  x: [],
+                        y: [],
+                        type: 'scatter',
+                      name: 'ch 4'}
+                  ];
 
                   var layout = {
 

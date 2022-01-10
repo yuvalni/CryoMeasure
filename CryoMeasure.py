@@ -14,8 +14,9 @@ from Keithley196V2 import Keithley196 as K196
 from Switch7001 import Switch
 import csv
 
-q = Queue()
+RT_data_q = Queue()
 q_temp = Queue()
+Tq = Queue()
 Channel_list = []
 cmd_q = Queue()
 data_q = Queue(maxsize = 1)
@@ -39,7 +40,7 @@ eel.init('web')
  # measuring
 meter_196 = K196()
 @eel.expose
-def change_channel(id,checked):
+def change_channels(id,checked):
     if checked:
         Channel_list.append(id)
         Channel_list.sort()
@@ -47,6 +48,10 @@ def change_channel(id,checked):
         Channel_list.remove(id)
 
 
+@eel.expose
+def set_channels(channels)
+    Channel_list = channels
+    print(Channel_list)
 
 def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
     logging.debug('path is {}'.format(path))
@@ -211,14 +216,15 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
     logging.info('start cont. meas.')
     #eel.set_meas_status('start cont. meas.')
     stop_RT.clear()
+    stop_T.clear()
     halt_meas.clear()
     csv_file, writer = initialize_file(sample_name)
     switch = initialize_Switch()
     keithley = initialize_keithley2400(current,voltage_comp,nplc_speed) # return keith2400 object
     print('start measurement')
     logging.debug('start measurement')
-    #eel.spawn(send_measure_data_to_page) ## start messaging function to the page
-
+    eel.spawn(send_measure_data_to_page) ## start messaging function to the page
+    eel.spawn(send_temp_data_to_page)
 
     Channel_list = [1] #this is temporary
     while not halt_meas.is_set():
@@ -232,9 +238,11 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
         for channel in _Channel_list:
             Switch_to(channel, switch)
             R, I = measure_resistance(keithley,AC)
-
+            RT_data_q.put((T,R,channel))
+            Tq.put(T)
             data["Resistance {0} [Ohm]".format(channel)] = R
             data["current {0} [mA]".format(channel)] = I
+
             print(data["Resistance {0} [Ohm]".format(channel)])
         #eel.send_data(data) #we need to write this function
         writer.writerow(data) #this takes a dictionary and fill in the columns
@@ -242,53 +250,30 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
 
     halt_meas.clear()
     stop_RT.set()
+    stop_T.set()
     eel.set_meas_status('idle.')
     csv_file.close()
 
-    def send_measure_data_to_page():
-        logging.debug('start sending')
-        print('start sending.')
-        while not stop_RT.is_set():
-            if not q.empty():
-                value = q.get()
-                T, R = value
-                print(T, R)
-                eel.get_RT_data(T, R)
-            else:
-                eel.sleep(0.5)
-        logging.debug('thread is exiting.')
+def send_measure_data_to_page():
+    logging.debug('start sending')
+    print('start sending.')
+    while not stop_RT.is_set():
+        if not RT_data_q.empty():
+            value = RT_data_q.get()
+            T, R, ch = value
+            eel.update_channel(R, T, ch)
+        else:
+            eel.sleep(0.5)
+    logging.debug('thread is exiting.')
 
 
-    def send_temp_data_to_page():
-        logging.debug('start sending')
-        print('start sending.')
-        while not stop_T.is_set():
-            if not q.empty():
-                value = q.get()
-                Temp= value
-                print(Temp)
-                eel.send_T_data(Temp)
-            else:
-                eel.sleep(0.5)
-        logging.debug('thread is exiting.')
-
-
-def end_measurement(s):
-    halt_meas.clear()
-    eel.toggle_start_measure()
-    stop_RT.set() #kill eel messagin thread
-    s.send(b'disconnect')
-    s.close()
-    logging.debug('Closed connection to Dyna')
-    eel.change_connection_ind(False)
-
-
-#def Switch_from_to(a, b, Switch):
-    # open_Channel(a)
-    # close_Channel(b)
-
-    # Checking for errors
-#   error_name = sourcemeter.error  # need to change to the right code
-#  if not error_name[1] == '':
-#        error.set()
-# return b
+def send_temp_data_to_page():
+    logging.debug('start sending')
+    print('start sending.')
+    while not stop_T.is_set():
+        if not Tq.empty():
+            Temp = Tq.get()
+            eel.send_T_data(Temp)
+        else:
+            eel.sleep(0.5)
+    logging.debug('thread is exiting.')
