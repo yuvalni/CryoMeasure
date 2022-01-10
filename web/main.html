@@ -42,13 +42,12 @@
         }
 
         </script>
-        <div class="status row-flex rounded border border-secondary bg-light">
+        <div class="status status-flex rounded border border-secondary bg-light">
+          <div class="alert alert-primary" role="alert">Temperature: <h1><span id="current_Temp"></span> [K] </h1></div>
           <div class="alert alert-danger" role="alert" hidden >Not connected</div>
           <div class="alert alert-warning" role="alert" id="compliance_status" hidden >Compliance</div>
           <div class="alert alert-success" role="alert" id="Temp_stable_status" hidden >Temperature stable</div>
           <div class="alert alert-success" role="alert" id="meas_status" hidden >Measurement running</div>
-          <div class="alert alert-primary" role="alert">Temperature: <h1><span id="current_Temp"></span> [K] </h1></div>
-
         </div>
 
         <div class="plot border rounded bg-light">
