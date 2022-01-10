@@ -31,14 +31,6 @@ Channel_list = [1,2,3,4] # temporary
 
 eel.init('web')
 
-#Main Script
-  # initializing
-    #file_path = initialize_file(file_name,path='defulet_path'):
-    #Switch = initialize_Switch(Start_Channel,address="GPIB::16"):
-#    k196 = initialize_Keithley196(voltage_range = 0.001,address="GPIB::16"):
- # geting rady to measure
-    #mean_Temp, std_temp = Get_stable_temp(meter_196,rate,meas_num,start_temp,Std_bound)
- # measuring
 meter_196 = K196()
 @eel.expose
 def change_channels(id,checked):
@@ -215,7 +207,7 @@ def halt_measurement():
 def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_196,AC=True):
     rate = float(rate)
     logging.info('start cont. meas.')
-    #eel.set_meas_status('start cont. meas.')
+    eel.set_meas_status(True)
     stop_RT.clear()
     stop_T.clear()
     halt_meas.clear()
@@ -227,7 +219,6 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
     eel.spawn(send_measure_data_to_page) ## start messaging function to the page
     eel.spawn(send_temp_data_to_page)
 
-    Channel_list = [1] #this is temporary
     while not halt_meas.is_set():
         # get new ch list
         data = {}
@@ -253,7 +244,7 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
     halt_meas.clear()
     stop_RT.set()
     stop_T.set()
-    eel.set_meas_status('idle.')
+    eel.set_meas_status(False)
     csv_file.close()
 
 def send_measure_data_to_page():
