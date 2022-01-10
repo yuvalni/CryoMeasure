@@ -26,7 +26,8 @@ stop_T = Event()
 error = Event()
 error_name = 'No error'
 cooling_timeout = 3600
-Channel_list = [1,2,3,4]
+
+Channel_list = [1,2,3,4] # temporary
 
 eel.init('web')
 
@@ -246,6 +247,7 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
             print(data["Resistance {0} [Ohm]".format(channel)])
         #eel.send_data(data) #we need to write this function
         writer.writerow(data) #this takes a dictionary and fill in the columns
+        #here we may update the transport parameters
         eel.sleep(rate)
 
     halt_meas.clear()
