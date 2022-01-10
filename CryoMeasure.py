@@ -204,7 +204,7 @@ def Switch_to(ch, Switch):
         error.set()
     return ch
 
-
+@eel.expose
 def halt_measurement():
     logging.info('sending stop command.')
     halt_meas.set()
