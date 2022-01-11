@@ -17,12 +17,14 @@ import csv
 RT_data_q = Queue()
 q_temp = Queue()
 Tq = Queue()
+transport_parameter_q = Queue(maxsize=1)
 Channel_list = []
-cmd_q = Queue()
-data_q = Queue(maxsize = 1)
+
 halt_meas = Event()
 stop_RT = Event()
 stop_T = Event()
+
+
 error = Event()
 error_name = 'No error'
 cooling_timeout = 3600
@@ -48,6 +50,19 @@ def set_channels(channels):
     Channel_list = channels
     print(Channel_list)
 
+@eel.expose
+def update_transport(current,compliance,nplc):
+    if transport_parameter_q.full():
+        transport_parameter_q.get(block=False)
+    transport_parameter_q.put((current,compliance,nplc),block=False) #we never want to block exectution
+    print(current,compliance,nplc)
+
+def update_keithley_parameters(sourcemeter):
+    current,compliance,nplc = transport_parameter_q.get(block=False)
+    sourcemeter.compliance_voltage = compliance
+    sourcemeter.source_current = current
+    sourcemeter.voltage_nplc = nplc
+
 def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
     logging.debug('path is {}'.format(path))
     print(path)
@@ -64,6 +79,7 @@ def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
 
 
 def initialize_keithley2400(I,V_comp,nplc,current_range=0.001,voltage_range = 0.1,address="GPIB0::16::INSTR"):
+    transport_parameter_q.get(block=False) #if there is some update for keithley for some reason- remove it.
     assert nplc > 0.01 and nplc <= 10
     V_comp = float(V_comp)
     nplc = float(nplc)
@@ -243,9 +259,10 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True)
             data["current {0} [mA]".format(channel)] = I
             #print("R{0}: {1}".format(channel,(data["Resistance {0} [Ohm]".format(channel)])))
 
-        #eel.send_data(data) #we need to write this function
         writer.writerow(data) #this takes a dictionary and fill in the columns
-        #here we may update the transport parameters
+        if transport_parameter_q.full(): #there is update waiting
+            update_keithley_parameters(keithley) #update!
+
         eel.sleep(rate)
 
     halt_meas.clear()
