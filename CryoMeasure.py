@@ -25,7 +25,7 @@ stop_T = Event()
 error = Event()
 error_name = 'No error'
 cooling_timeout = 3600
-Channel_list = [1,2,3,4]
+Channel_list = [2,3,4]
 
 eel.init('web')
 
@@ -81,7 +81,7 @@ def initialize_keithley2400(I,V_comp,nplc,current_range=0.001,voltage_range = 0.
     eel.sleep(10 / 1000)
 
     #setting voltage read params
-    sourcemeter.measure_voltage(nplc,voltage_range,True)
+    sourcemeter.measure_voltage(nplc,voltage_range,auto_range=False)
     sleep(10 / 1000)
     sourcemeter.write(":SYST:BEEP:STAT OFF")
 
@@ -220,13 +220,14 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
     #eel.spawn(send_measure_data_to_page) ## start messaging function to the page
 
 
-    Channel_list = [1] #this is temporary
+
+    Channel_list = [2, 3, 4]
     while not halt_meas.is_set():
         # get new ch list
         data = {}
         data["Temperature"] = meter_196.getTemp()
         data["Cernox_Resistance [Ohm]"] = meter_196.get_voltage() * 10**5
-        print(data["Temperature"])
+        print("temperature: {}".format(data["Temperature"]))
         data["Time"] = dt.now()
         _Channel_list = Channel_list # update local channel list from global only before and after for loop
         for channel in _Channel_list:
@@ -235,7 +236,7 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
 
             data["Resistance {0} [Ohm]".format(channel)] = R
             data["current {0} [mA]".format(channel)] = I
-            print(data["Resistance {0} [Ohm]".format(channel)])
+            print("R{0}: {1}".format(channel,(data["Resistance {0} [Ohm]".format(channel)])))
         #eel.send_data(data) #we need to write this function
         writer.writerow(data) #this takes a dictionary and fill in the columns
         eel.sleep(rate)
