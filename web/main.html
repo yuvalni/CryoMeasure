@@ -23,7 +23,46 @@
       eel.expose(send_T_data)
       function send_T_data(T){
         T_div = document.getElementById('current_Temp');
-        T_div.innerText = T;
+        T_div.innerText = T.toFixed(2);;
+        }
+
+        function clear_plot(){
+        var data = [{
+                    x: [],
+                    y: [],
+                    type: 'scatter',
+                    name: 'ch 1'
+                  },
+                  {  x: [],
+                    y: [],
+                    type: 'scatter',
+                  name: 'ch 2'},
+                    {  x: [],
+                      y: [],
+                      type: 'scatter',
+                    name: 'ch 3'},
+                      {  x: [],
+                        y: [],
+                        type: 'scatter',
+                      name: 'ch 4'}
+                  ];
+
+                  var layout = {
+
+                    xaxis: {
+                      title: 'Temperature',
+
+                      zeroline: false
+                    },
+                    yaxis: {
+                      title: 'Resistance [Ohm]',
+                      showline: false
+                    },
+                    autosize: true,
+                    height: 563
+                  };
+                  Plotly.newPlot(graphDiv, data, layout);
+
         }
     </script>
   </head>
@@ -175,7 +214,7 @@
           console.log(e.id,e.checked)
           id = parseFloat(e.id.replace('ch',''))
 
-          //eel.change_channel(id,e.checked)
+          eel.change_channels(id,e.checked)
         }
 
         function set_channel(){
@@ -192,7 +231,7 @@
           if (document.getElementById("ch4").checked){
             channels.push(4)
           }
-          //eel.set_channels(channels)
+          eel.set_channels(channels)
           console.log(channels)
         }
         </script>
@@ -231,8 +270,10 @@
 
 
       <script type="text/javascript">
-      //start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_196)
+      //start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate)
         function start_cont_measure(){
+          //clear plot
+          clear_plot()
           //get all parameters from page
           current = parseFloat(document.getElementById("Current").value)
           compliance = parseFloat(document.getElementById("Compliance").value)

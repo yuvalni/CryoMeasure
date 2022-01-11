@@ -40,10 +40,11 @@ def change_channels(id,checked):
         Channel_list.sort()
     else:
         Channel_list.remove(id)
+    print(Channel_list)
 
 
 @eel.expose
-def set_channels(channels)
+def set_channels(channels):
     Channel_list = channels
     print(Channel_list)
 
@@ -205,8 +206,13 @@ def halt_measurement():
 
 
 @eel.expose
-def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_196,AC=True):
+def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True):
+    nplc_speed = float(nplc_speed)
+    current = float(current) * 10**-3 #converting mA from frontend to Ampere for device
+    voltage_comp = float(voltage_comp)
     rate = float(rate)
+
+
     logging.info('start cont. meas.')
     eel.set_meas_status(True)
     stop_RT.clear()
@@ -225,17 +231,17 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,meter_19
         data = {}
         data["Temperature"] = meter_196.getTemp()
         data["Cernox_Resistance [Ohm]"] = meter_196.get_voltage() * 10**5
-        print("temperature: {}".format(data["Temperature"]))
+        #print("temperature: {}".format(data["Temperature"]))
         data["Time"] = dt.now()
         _Channel_list = Channel_list # update local channel list from global only before and after for loop
         for channel in _Channel_list:
             Switch_to(channel, switch)
             R, I = measure_resistance(keithley,AC)
-            RT_data_q.put((T,R,channel))
-            Tq.put(T)
+            RT_data_q.put((data["Temperature"],R,channel))
+            Tq.put(data["Temperature"])
             data["Resistance {0} [Ohm]".format(channel)] = R
             data["current {0} [mA]".format(channel)] = I
-            print("R{0}: {1}".format(channel,(data["Resistance {0} [Ohm]".format(channel)])))
+            #print("R{0}: {1}".format(channel,(data["Resistance {0} [Ohm]".format(channel)])))
 
         #eel.send_data(data) #we need to write this function
         writer.writerow(data) #this takes a dictionary and fill in the columns
@@ -271,3 +277,5 @@ def send_temp_data_to_page():
         else:
             eel.sleep(0.5)
     logging.debug('thread is exiting.')
+
+eel.start('main.html')
