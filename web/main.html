@@ -6,17 +6,48 @@
     <script type="text/javascript" src="/eel.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.8.3.min.js"></script>
 
-
     <meta charset="utf-8">
     <title></title>
+
+
+    <script type="text/javascript">
+    eel.expose(update_channel)
+    function update_channel(R,T,ch){
+      var update = {
+          x:  [[T]],
+          y: [[R]]
+          }
+          Plotly.extendTraces('data_plot', update, [ch-1])
+    }
+
+      eel.expose(send_T_data)
+      function send_T_data(T){
+        T_div = document.getElementById('current_Temp');
+        T_div.innerText = T;
+        }
+    </script>
   </head>
   <body>
     <div class="gridcontainer">
+        <script type="text/javascript">
+        eel.expose(set_meas_status)
+        function set_meas_status(status){
+          meas_status = document.getElementById('meas_status')
+          meas_status.hidden = !status
+        }
+        eel.expose(set_compliance_status)
+        function set_compliance_status(status){
+          compliance_status = document.getElementById('compliance_status')
+          compliance_status.hidden = !status
+        }
 
-        <div class="status row-flex rounded border border-secondary bg-light">
-          <span class="badge bg-danger">Not connected</span>
-          <span class="badge bg-warning">Compliance</span>
-          <span class="badge bg-success">Temperature stable</span>
+        </script>
+        <div class="status status-flex rounded border border-secondary bg-light">
+          <div class="alert alert-primary" role="alert">Temperature: <h1><span id="current_Temp"></span> [K] </h1></div>
+          <div class="alert alert-danger" role="alert" hidden >Not connected</div>
+          <div class="alert alert-warning" role="alert" id="compliance_status" hidden >Compliance</div>
+          <div class="alert alert-success" role="alert" id="Temp_stable_status" hidden >Temperature stable</div>
+          <div class="alert alert-success" role="alert" id="meas_status" hidden >Measurement running</div>
         </div>
 
         <div class="plot border rounded bg-light">
@@ -26,13 +57,24 @@
         <script type="text/javascript">
         var graphDiv = document.getElementById('data_plot')
         var data = [{
-                    x: [1999, 2000, 2001, 2002],
-                    y: [10, 15, 13, 17],
-                    type: 'scatter'
+                    x: [],
+                    y: [],
+                    type: 'scatter',
+                    name: 'ch 1'
                   },
-                  {  x: [1999, 2000, 2001, 2002],
-                    y: [2, 45, 8, 6],
-                    type: 'scatter'}];
+                  {  x: [],
+                    y: [],
+                    type: 'scatter',
+                  name: 'ch 2'},
+                    {  x: [],
+                      y: [],
+                      type: 'scatter',
+                    name: 'ch 3'},
+                      {  x: [],
+                        y: [],
+                        type: 'scatter',
+                      name: 'ch 4'}
+                  ];
 
                   var layout = {
 
@@ -44,7 +86,9 @@
                     yaxis: {
                       title: 'Resistance [Ohm]',
                       showline: false
-                    }
+                    },
+                    autosize: true,
+                    height: 563
                   };
                   Plotly.newPlot(graphDiv, data, layout);
         </script>
@@ -60,6 +104,7 @@
           nplc = parseFloat(document.getElementById("NPLC").value)
 
           console.log(current,compliance,nplc)
+
         }
 
         </script>
@@ -202,7 +247,7 @@
 
         <div class="actions rounded border border-secondary bg-light">
           <button type="button" class="btn btn-outline-success btn-lg" onclick="start_cont_measure()">Start</button>
-          <button type="button" class="btn btn-outline-danger btn-lg">Stop</button>
+          <button type="button" class="btn btn-outline-danger btn-lg" onclick="eel.halt_measurement()">Stop</button>
         </div>
     </div>
   </body>

@@ -16,6 +16,13 @@
   align-items: center;
   align-content: space-between;
 }
+.status-flex{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 20px;
+}
 
 .col-flex{
   display: flex;
@@ -29,7 +36,7 @@
 .status{
   padding: 10px;
   grid-row: 1;
-  grid-column: 9 / 13;
+  grid-column: 6 / 13;
   /* background-color: indigo; */
 }
 .plot {
