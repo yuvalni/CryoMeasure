@@ -23,7 +23,7 @@ class Keithley196():
 
     def get_voltage(self):
         string = self.inst.query('*IDN?')
-        return float(string.replace('\r\n','').replace('NDCV',''))
+        return float(string.replace('\r\n','').replace('NDCV','').replace('ZDCV',''))
 
 
     def getTemp(self):
