@@ -2,7 +2,7 @@ import pyvisa
 from datetime import datetime as dt
 
 class Keithley196():
-    def __init__(self,address='GPIB0::7::INSTR'):
+    def __init__(self,address='GPIB1::7::INSTR'):
         #handle connection!
         self.inst = pyvisa.ResourceManager().open_resource(address)
         self.poly_fit_HighTemp = [2.266093970179639e+03,-74.679741502403559,1.306792649962983,-0.014094956469091,9.945749933401484e-05,-4.688871397124473e-07,1.466123461743109e-09,-2.920818817154983e-12,3.357507675208470e-15,-1.695097455234765e-18] #a,b,c,d of polynom

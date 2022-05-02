@@ -2,7 +2,7 @@ import pyvisa
 
 
 class Switch():
-    def __init__(self, address='GPIB0::6::INSTR'):
+    def __init__(self, address='GPIB1::6::INSTR'):
         self.inst = pyvisa.ResourceManager().open_resource(address)
 
     def initialize(self):

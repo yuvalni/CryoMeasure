@@ -6,6 +6,7 @@ cd('C:\Users\Amit\Documents\CryoMeasure\Calibration');
 
 T_Cernox=readtable('Cernox_calibration.dat');
 R_Cernox=table2array(T_Cernox(1:60,20));
+V_Cernox=table2array(T_Cernox(1:60,8)).*R_Cernox*10^-6;
 Temp_Cernox=table2array(T_Cernox(1:60,4));
 
 T_Diode=readtable('LS_Diode_Calibration.dat');
@@ -60,3 +61,46 @@ ylabel('Temp [K]')
 %        p9 =      -2.919  (-3.031, -2.808)
 %        p10 =       389.6  (381.5, 397.6)
 
+%% for LakeShore
+curve_number = '31';
+curve_description ='_0_Cernox_P24384';
+    A1 = [V_Cernox(:)', 6.55360];
+    A2 = [Temp_Cernox(:)', 0.0];
+data_points = '0.00000 ,499.9';
+for i=1:61;
+    formatSpec =strcat(data_points,',%.5f,%.1f');
+data_points = sprintf(formatSpec,A1(i),A2(i));
+end
+% need to see if V corve makes sanes last value seems to be to small
+data_points = strcat(data_points,'*');
+mystr=strcat('XC',curve_number,',',curve_description,',',data_points)
+%% Instrument Connection
+
+% Find a VISA-GPIB object.
+obj1 = instrfind('Type', 'visa-gpib', 'RsrcName', 'GPIB0::26::INSTR', 'Tag', '');
+
+% Create the VISA-GPIB object if it does not exist
+% otherwise use the object that was found.
+if isempty(obj1)
+    obj1 = visa('NI', 'GPIB0::26::INSTR');
+else
+    fclose(obj1);
+    obj1 = obj1(1);
+end
+
+% Connect to instrument object, obj1.
+fopen(obj1);
+
+%% Instrument Configuration and Control
+
+% Communicating with instrument object, obj1.
+for i=1:12;
+disp(mystr(1+(i-1)*139:139*i));
+end
+%fprintf(obj1, 'XD[31]');
+fprintf(obj1, 's');
+
+%% Disconnect and Clean Up
+
+% Disconnect from instrument object, obj1.
+fclose(obj1);
