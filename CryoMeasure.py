@@ -24,6 +24,7 @@ halt_meas = Event()
 stop_RT = Event()
 stop_T = Event()
 
+measurement_lock = Event()
 
 error = Event()
 error_name = 'No error'
@@ -223,6 +224,9 @@ def halt_measurement():
 
 @eel.expose
 def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True):
+    if measurement_lock.is_set():
+        return False
+    measurement_lock.set()
     #TODO: HERE set a flag to lock start mesurements
     #TODO: Make sure that this function canot be called before lock is unset. either by creating a new function that calls this one,
     # or disabling the START button in gui.
@@ -272,7 +276,9 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True)
     #TODO: here remove the lock
     stop_RT.set()
     stop_T.set()
+    measurement_lock.clear()
     eel.set_meas_status(False)
+    eel.enable_start_button()
     csv_file.close()
 
 def send_measure_data_to_page():

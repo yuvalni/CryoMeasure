@@ -37,10 +37,16 @@
           meas_status = document.getElementById('meas_status')
           meas_status.hidden = !status
         }
+
         eel.expose(set_compliance_status)
         function set_compliance_status(status){
           compliance_status = document.getElementById('compliance_status')
           compliance_status.hidden = !status
+        }
+
+        eel.expose(enable_start_button)
+        function enable_start_button(){
+          document.getElementById("startBtn").disabled = false;
         }
 
         </script>
@@ -259,6 +265,7 @@
       <script type="text/javascript">
       //start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate)
         function start_cont_measure(){
+          document.getElementById("startBtn").disabled = true;
           myChart.data.datasets[0].data = []
           myChart.data.datasets[1].data = []
           myChart.data.datasets[2].data = []
@@ -277,7 +284,7 @@
       </script>
 
         <div class="actions rounded border border-secondary bg-light">
-          <button type="button" class="btn btn-outline-success btn-lg" onclick="start_cont_measure()">Start</button>
+          <button type="button" id="startBtn" class="btn btn-outline-success btn-lg" onclick="start_cont_measure()">Start</button>
           <button type="button" class="btn btn-outline-danger btn-lg" onclick="eel.halt_measurement()">Stop</button>
         </div>
     </div>
