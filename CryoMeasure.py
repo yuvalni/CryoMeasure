@@ -223,6 +223,7 @@ def halt_measurement():
 
 @eel.expose
 def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True):
+    eel.sleep(1)
     nplc_speed = float(nplc_speed)
     current = float(current) * 10**-3 #converting mA from frontend to Ampere for device
     voltage_comp = float(voltage_comp)
