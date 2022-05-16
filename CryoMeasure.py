@@ -223,7 +223,9 @@ def halt_measurement():
 
 @eel.expose
 def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True):
-    eel.sleep(1)
+    #TODO: HERE set a flag to lock start mesurements
+    #TODO: Make sure that this function canot be called before lock is unset. either by creating a new function that calls this one,
+    # or disabling the START button in gui.
     nplc_speed = float(nplc_speed)
     current = float(current) * 10**-3 #converting mA from frontend to Ampere for device
     voltage_comp = float(voltage_comp)
@@ -242,7 +244,7 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True)
     logging.debug('start measurement')
     eel.spawn(send_measure_data_to_page) ## start messaging function to the page
     eel.spawn(send_temp_data_to_page)
-
+    eel.sleep(0.5)
     while not halt_meas.is_set():
         # get new ch list
         data = {}
@@ -267,6 +269,7 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True)
         eel.sleep(rate)
 
     halt_meas.clear()
+    #TODO: here remove the lock
     stop_RT.set()
     stop_T.set()
     eel.set_meas_status(False)
