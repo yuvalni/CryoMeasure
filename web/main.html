@@ -4,12 +4,10 @@
 
     <link href="bootstrap.min.css" rel="stylesheet" >
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
 
 
     <script type="text/javascript" src="/eel.js"></script>
-
-    <script src="plotly-2.8.3.min.js"></script>
-    <script src="https://cdn.plot.ly/plotly-2.8.3.min.js"></script>
 
     <meta charset="utf-8">
     <title></title>
@@ -18,11 +16,10 @@
     <script type="text/javascript">
     eel.expose(update_channel)
     function update_channel(R,T,ch){
-      var update = {
-          x:  [[T]],
-          y: [[R]]
-          }
-          Plotly.extendTraces('data_plot', update, [ch-1])
+
+      myChart.data.datasets[ch-1].data.push({x:T,y:R})
+      //myChart.options.scales.xAxes
+      myChart.update()
     }
 
       eel.expose(send_T_data)
@@ -30,50 +27,7 @@
         T_div = document.getElementById('current_Temp');
         T_div.innerText = T.toFixed(2);;
         }
-
-        function clear_plot(){
-        var data = [{
-                    x: [],
-                    y: [],
-                    mode: 'markers',
-                    type: 'scatter',
-                    name: 'ch 1'
-                  },
-                  {  x: [],
-                    y: [],
-                    mode: 'markers',
-                    type: 'scatter',
-                  name: 'ch 2'},
-                    {  x: [],
-                      y: [],
-                      mode: 'markers',
-                      type: 'scatter',
-                    name: 'ch 3'},
-                      {  x: [],
-                        y: [],
-                        mode: 'markers',
-                        type: 'scatter',
-                      name: 'ch 4'}
-                  ];
-
-                  var layout = {
-
-                    xaxis: {
-                      title: 'Temperature',
-
-                      zeroline: false
-                    },
-                    yaxis: {
-                      title: 'Resistance [Ohm]',
-                      showline: false
-                    },
-                    autosize: true,
-                    height: 563
-                  };
-                  Plotly.newPlot(graphDiv, data, layout);
-
-        }
-    </script>
+  </script>
   </head>
   <body>
     <div class="gridcontainer">
@@ -99,49 +53,68 @@
         </div>
 
         <div class="plot border rounded bg-light">
-          <div id="data_plot"></div>
+            <canvas id="RT" height="750" ></canvas>
         </div>
 
-        <script type="text/javascript">
-        var graphDiv = document.getElementById('data_plot')
-        var data = [{
-                    x: [],
-                    y: [],
-                    type: 'scatter',
-                    name: 'ch 1'
-                  },
-                  {  x: [],
-                    y: [],
-                    type: 'scatter',
-                  name: 'ch 2'},
-                    {  x: [],
-                      y: [],
-                      type: 'scatter',
-                    name: 'ch 3'},
-                      {  x: [],
-                        y: [],
-                        type: 'scatter',
-                      name: 'ch 4'}
-                  ];
+        <script>
 
-                  var layout = {
+          var ctx = document.getElementById('RT').getContext('2d');
+          var myChart = new Chart(ctx,{
+            type: 'scatter',
+            data:{
+              datasets: [{
+                label:  'Ch1',
+                backgroundColor: "#1982c4",
+                data: [
 
-                    xaxis: {
-                      title: 'Temperature',
+                ]
+              },
+              {
+                label:  'Ch2',
+                backgroundColor: "#ff7d00",
+                data: [
 
-                      zeroline: false
-                    },
-                    yaxis: {
-                      title: 'Resistance [Ohm]',
-                      showline: false
-                    },
-                    autosize: true,
-                    height: 563
-                  };
-                  Plotly.newPlot(graphDiv, data, layout);
-        </script>
+                ]
+              },{
+                label:  'Ch3',
+                backgroundColor: "#7c238c",
+                data: [
 
+                ]
+              },
+              {
+                label:  'Ch4',
+                backgroundColor: "#38b000",
+                data: [
 
+                ]
+              }]
+            },
+            options:{
+              scales: {
+            yAxes: [{
+              scaleLabel: {
+                display: true,
+                labelString: 'Resistance [Ohm]'
+              }
+            }],
+            xAxes: [{
+              scaleLabel: {
+                display: true,
+                labelString: 'Temperature [K]'
+              }
+            }]
+          },
+              title: {
+              display: true,
+              text: 'Resistance vs. Temperature'
+            },
+              responsive:true,
+              maintainAspectRatio: false
+            }
+          });
+
+          </script>
 
 
 
