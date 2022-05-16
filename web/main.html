@@ -87,7 +87,7 @@
               },
               {
                 label:  'Ch4',
-                backgroundColor: "#38b000",
+                backgroundColor: "#6E7E85",
                 data: [
 
                 ]
@@ -259,8 +259,11 @@
       <script type="text/javascript">
       //start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate)
         function start_cont_measure(){
-          //clear plot
-          //clear_plot() //This needs to be fixed!
+          myChart.data.datasets[0].data = []
+          myChart.data.datasets[1].data = []
+          myChart.data.datasets[2].data = []
+          myChart.data.datasets[3].data = []
+          myChart.update()
           //get all parameters from page
           current = parseFloat(document.getElementById("Current").value)
           compliance = parseFloat(document.getElementById("Compliance").value)
