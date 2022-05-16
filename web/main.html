@@ -260,7 +260,7 @@
       //start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate)
         function start_cont_measure(){
           //clear plot
-          clear_plot()
+          //clear_plot() //This needs to be fixed!
           //get all parameters from page
           current = parseFloat(document.getElementById("Current").value)
           compliance = parseFloat(document.getElementById("Compliance").value)
