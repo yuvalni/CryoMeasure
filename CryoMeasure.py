@@ -31,11 +31,12 @@ error_name = 'No error'
 cooling_timeout = 3600
 
 Channel_list = [1,2,3,4]
-
-
+Temperature = -999
+Temp_rate = 0.01
 eel.init('web')
 
-meter_196 = K196()
+
+
 @eel.expose
 def change_channels(id,checked):
     if checked:
@@ -152,6 +153,14 @@ def measure_resistance(sourcemeter,AC=True):
         return (V_p - V_m)/(2*I),I
 
 
+def Temp_loop():
+    global Temperature
+    meter_196 = K196()
+    while True:
+        Temperature = meter_196.getTemp()
+        Tq.put(Temperature)
+        eel.send_T_data(Temperature)
+        eel.sleep(Temp_rate)
 
 def Get_stable_temp(k196,rate,meas_num,start_temp,Std_bound):
     logging.info('get stable temp')
@@ -247,13 +256,12 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True)
     print('start measurement')
     logging.debug('start measurement')
     eel.spawn(send_measure_data_to_page) ## start messaging function to the page
-    eel.spawn(send_temp_data_to_page)
     eel.sleep(0.5)
     while not halt_meas.is_set():
         # get new ch list
         data = {}
-        data["Temperature"] = meter_196.getTemp()
-        data["Cernox_Resistance [Ohm]"] = meter_196.get_voltage() * 10**5
+        data["Temperature"] = Temperature
+        #data["Cernox_Resistance [Ohm]"] = meter_196.get_voltage() * 10**5
         #print("temperature: {}".format(data["Temperature"]))
         data["Time"] = dt.now()
         _Channel_list = Channel_list # update local channel list from global only before and after for loop
@@ -261,7 +269,6 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True)
             Switch_to(channel, switch)
             R, I = measure_resistance(keithley,AC)
             RT_data_q.put((data["Temperature"],R,channel))
-            Tq.put(data["Temperature"])
             data["Resistance {0} [Ohm]".format(channel)] = R
             data["current {0} [mA]".format(channel)] = I
             #print("R{0}: {1}".format(channel,(data["Resistance {0} [Ohm]".format(channel)])))
@@ -294,15 +301,5 @@ def send_measure_data_to_page():
     logging.debug('thread is exiting.')
 
 
-def send_temp_data_to_page():
-    logging.debug('start sending')
-    print('start sending.')
-    while not stop_T.is_set():
-        if not Tq.empty():
-            Temp = Tq.get()
-            eel.send_T_data(Temp)
-        else:
-            eel.sleep(0.5)
-    logging.debug('thread is exiting.')
-
+eel.spawn(Temp_loop)
 eel.start('main.html')
