@@ -301,5 +301,9 @@ def send_measure_data_to_page():
     logging.debug('thread is exiting.')
 
 
+def PID():
+    pass
+
+
 eel.spawn(Temp_loop)
 eel.start('main.html')
