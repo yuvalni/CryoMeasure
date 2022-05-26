@@ -13,6 +13,7 @@ from pymeasure.instruments.keithley import Keithley2400
 from Keithley196V2 import Keithley196 as K196
 from Switch7001 import Switch
 import csv
+from simple_pid import PID
 
 RT_data_q = Queue()
 q_temp = Queue()
@@ -23,6 +24,7 @@ Channel_list = []
 halt_meas = Event()
 stop_RT = Event()
 stop_T = Event()
+setpoint_changed = Event()
 
 measurement_lock = Event()
 
@@ -30,6 +32,7 @@ error = Event()
 error_name = 'No error'
 cooling_timeout = 3600
 
+setPoint = 280
 Channel_list = [1,2,3,4]
 Temperature = -999
 Temp_rate = 0.01
@@ -155,12 +158,32 @@ def measure_resistance(sourcemeter,AC=True):
 
 def Temp_loop():
     global Temperature
+    global setPoint
+    global PID_On = False
+    HeaterOutput = 0
+    pid = PID(1,0,0,setpoint=setPoint)
+    pid.sample_time = Temp_rate
+    pid.output_limits = (0,100)
+
     meter_196 = K196()
+
     while True:
+        #We need to be able to change setpoint and PID_on inside the loop.
+        #Use a queue? maybe a global variable?
+        if setpoint_changed.is_set():
+            pid.setpoint = setPoint
+            setpoint_changed.clear()
         Temperature = meter_196.getTemp()
+        HeaterOutput = pid(Temperature)
         Tq.put(Temperature)
         eel.send_T_data(Temperature)
         eel.sleep(Temp_rate)
+
+@eel
+def change_PID_setpoint(setpoint):
+    global setPoint = setpoint
+    setpoint_changed.set()
+
 
 def Get_stable_temp(k196,rate,meas_num,start_temp,Std_bound):
     logging.info('get stable temp')
