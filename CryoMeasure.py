@@ -9,6 +9,8 @@ import logging
 import os
 from time import sleep
 from datetime import datetime as dt
+
+import serial
 from pymeasure.instruments.keithley import Keithley2400
 from Keithley196V2 import Keithley196 as K196
 from Switch7001 import Switch
@@ -18,6 +20,7 @@ from simple_pid import PID
 RT_data_q = Queue()
 q_temp = Queue()
 Tq = Queue()
+HeaterOutput_Q = Queue()
 transport_parameter_q = Queue(maxsize=1)
 Channel_list = []
 
@@ -159,7 +162,8 @@ def measure_resistance(sourcemeter,AC=True):
 def Temp_loop():
     global Temperature
     global setPoint
-    global PID_On = False
+    global PID_On
+    PID_On = False
     HeaterOutput = 0
     pid = PID(1,0,0,setpoint=setPoint)
     pid.sample_time = Temp_rate
@@ -173,17 +177,41 @@ def Temp_loop():
         if setpoint_changed.is_set():
             pid.setpoint = setPoint
             setpoint_changed.clear()
+
         Temperature = meter_196.getTemp()
         HeaterOutput = pid(Temperature)
+        HeaterOutput_Q.put(HeaterOutput)
+
         Tq.put(Temperature)
         eel.send_T_data(Temperature)
         eel.sleep(Temp_rate)
 
-@eel
-def change_PID_setpoint(setpoint):
-    global setPoint = setpoint
+
+@eel.expose
+def change_PID_setpoint(_set_point):
+    # This maybe not a good idea. the setpoint should be set
+    #within the python script as a part of rate
+    #maybe add a setpoint option to the GUI?
+    global setPoint
+    setPoint = _set_point
     setpoint_changed.set()
 
+@eel.expose
+def change_PID_parameters(P,I,D):
+    raise NotImplementedError
+
+
+def TempRateLoop():
+    """ This get a rate from the gui, and changes setpoint with time"""
+    pass
+
+def Handle_Output():
+    """This takes the output value from Temperature loop and handle it.
+    First Output to Heater, then  send value to the GUI."""
+    ser = serial.Serial('COM3',baudrate=11520)
+    max_out = 65535
+
+    pass
 
 def Get_stable_temp(k196,rate,meas_num,start_temp,Std_bound):
     logging.info('get stable temp')
