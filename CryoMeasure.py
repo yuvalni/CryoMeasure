@@ -28,6 +28,7 @@ halt_meas = Event()
 stop_RT = Event()
 stop_T = Event()
 setpoint_changed = Event()
+pid_changed = Event()
 
 measurement_lock = Event()
 
@@ -163,9 +164,13 @@ def Temp_loop():
     global Temperature
     global setPoint
     global PID_On
+    global P,I,D
+    P = 1
+    I = 0
+    D = 0
     PID_On = False
     HeaterOutput = 0
-    pid = PID(1,0,0,setpoint=setPoint)
+    pid = PID(P,I,D,setpoint=setPoint)
     pid.sample_time = Temp_rate
     pid.output_limits = (0,100)
 
@@ -177,7 +182,11 @@ def Temp_loop():
         if setpoint_changed.is_set():
             pid.setpoint = setPoint
             setpoint_changed.clear()
-
+        if pid_changed.is_set():
+            pid.Kp = P
+            pid.Ki = I
+            pid.Kd = D
+            pid_changed.clear()
         Temperature = meter_196.getTemp()
         HeaterOutput = pid(Temperature)
         HeaterOutput_Q.put(HeaterOutput)
@@ -197,7 +206,12 @@ def change_PID_setpoint(_set_point):
     setpoint_changed.set()
 
 @eel.expose
-def change_PID_parameters(P,I,D):
+def change_PID_parameters(p,i,d):
+    global P,I,D
+    P = p
+    I = i
+    D = d
+    pid_changed.set()
     raise NotImplementedError
 
 
