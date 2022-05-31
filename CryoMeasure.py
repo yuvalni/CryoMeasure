@@ -165,6 +165,7 @@ def Temp_loop():
     global setPoint
     global PID_On
     global P,I,D
+    setPoint=290
     P = 1
     I = 0
     D = 0
@@ -187,7 +188,7 @@ def Temp_loop():
             pid.Kp = P
             pid.Ki = I
             pid.Kd = D
-            
+
             pid_changed.clear()
         Temperature = meter_196.getTemp()
         HeaterOutput = pid(Temperature)
@@ -214,9 +215,12 @@ def change_PID_parameters(p,i,d):
     global P,I,D
     print("changed PID values:")
     print((p,i,d))
-    P = p
-    I = i
-    D = d
+    if p:
+        P = p
+    if i:
+        I = i
+    if d:
+        D = d
     pid_changed.set()
 
 
@@ -228,10 +232,20 @@ def TempRateLoop():
 def Handle_Output():
     """This takes the output value from Temperature loop and handle it.
     First Output to Heater, then  send value to the GUI."""
-    ser = serial.Serial('COM3',baudrate=11520)
-    max_out = 65535
+    ser = serial.Serial('COM3',baudrate=11520,timeout=1)
+    max_Output = 100
+    min_Output = 0
+    while True:
+        if HeaterOutput_Q.not_empty:
+            OP = HeaterOutput_Q.get()
+            if OP > max_Output:
+                OP = max_Output
+            elif OP < min_Output:
+                OP = min_Output
+            ser.write("on_{}\n\r".format(OP).encode())
+            OP_actual = ser.readline()
+        eel.sleep(0.1)
 
-    pass
 
 def Get_stable_temp(k196,rate,meas_num,start_temp,Std_bound):
     logging.info('get stable temp')
@@ -373,4 +387,6 @@ def send_measure_data_to_page():
 
 
 eel.spawn(Temp_loop)
+eel.spawn(Handle_Output)
+
 eel.start('main.html')
