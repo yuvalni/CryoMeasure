@@ -208,6 +208,8 @@ def change_PID_setpoint(_set_point):
 @eel.expose
 def change_PID_parameters(p,i,d):
     global P,I,D
+    print("changed PID values:")
+    print((p,i,d))
     P = p
     I = i
     D = d
