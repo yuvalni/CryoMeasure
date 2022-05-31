@@ -192,7 +192,8 @@ def Temp_loop():
             pid_changed.clear()
         Temperature = meter_196.getTemp()
         HeaterOutput = pid(Temperature)
-        HeaterOutput_Q.put(HeaterOutput)
+        if PID_On:
+            HeaterOutput_Q.put(HeaterOutput)
 
         Tq.put(Temperature)
         eel.send_T_data(Temperature)
@@ -223,6 +224,11 @@ def change_PID_parameters(p,i,d):
         D = d
     pid_changed.set()
 
+@eel.expose
+def toggle_PID_ON(_state):
+    global PID_On
+    PID_On = _state
+
 
 
 def TempRateLoop():
@@ -243,8 +249,9 @@ def Handle_Output():
             elif OP < min_Output:
                 OP = min_Output
             ser.write("on_{}\n\r".format(OP).encode())
-            OP_actual = ser.readline()
-            print(OP_actual)
+            #OP_actual = ser.readline()
+
+
         eel.sleep(0.1)
 
 

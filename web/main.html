@@ -220,8 +220,12 @@
                       <div class="col">
                     <input type="text" id="D" class="form-control" aria-describedby="D">
                   </div>
+
+
             </div>
 
+
+          <input class="form-check-input" type="checkbox" role="switch" id="ch1" onchange="change_channel(this)" checked>
           <button type="button" class="btn btn-outline-primary btn-lg" onclick="setPID()">Set PID</button>
 
         </div>
@@ -237,6 +241,11 @@
         function set_setpoint(){
         sp = parseFloat(document.getElementById("SetPoint").value)
         eel.change_PID_setpoint(sp)
+        }
+
+        function set_PID_state(e){
+        console.log(e.checked)
+        eel.toggle_PID_ON()
         }
       </script>
 
