@@ -181,11 +181,13 @@ def Temp_loop():
         #Use a queue? maybe a global variable?
         if setpoint_changed.is_set():
             pid.setpoint = setPoint
+
             setpoint_changed.clear()
         if pid_changed.is_set():
             pid.Kp = P
             pid.Ki = I
             pid.Kd = D
+            
             pid_changed.clear()
         Temperature = meter_196.getTemp()
         HeaterOutput = pid(Temperature)
@@ -201,6 +203,8 @@ def change_PID_setpoint(_set_point):
     # This maybe not a good idea. the setpoint should be set
     #within the python script as a part of rate
     #maybe add a setpoint option to the GUI?
+    print("Set point changed to:")
+    print(_set_point)
     global setPoint
     setPoint = _set_point
     setpoint_changed.set()
@@ -214,7 +218,7 @@ def change_PID_parameters(p,i,d):
     I = i
     D = d
     pid_changed.set()
-    raise NotImplementedError
+
 
 
 def TempRateLoop():

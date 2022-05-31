@@ -199,7 +199,7 @@
             </div>
           </div>
 
-          <button type="button" class="btn btn-outline-primary btn-lg">Set</button>
+          <button type="button" class="btn btn-outline-primary btn-lg" onclick="set_setpoint()">Set</button>
           <h2>PID</h2>
           <div class="row g-3 alig n-items-center">
             <div class="col">
@@ -226,14 +226,21 @@
 
         </div>
 
-      <script type="text/javascript">
+            <script type="text/javascript">
         function setPID(){
         p = parseFloat(document.getElementById("P").value)
         i = parseFloat(document.getElementById("I").value)
         d = parseFloat(document.getElementById("D").value)
-        eel.change_PID_parameters(p,i,d):
+        eel.change_PID_parameters(p,i,d)
+        }
+
+        function set_setpoint(){
+        sp = parseFloat(document.getElementById("SetPoint").value)
+        eel.change_PID_setpoint(sp)
         }
       </script>
+
+
 
         <script type="text/javascript">
         function change_channel(e){
@@ -261,6 +268,7 @@
           console.log(channels)
         }
         </script>
+
         <div class="chSelect rounded border border-secondary bg-light">
           <div class="form-check form-switch">
           <input class="form-check-input" type="checkbox" role="switch" id="ch1" onchange="change_channel(this)" checked>
