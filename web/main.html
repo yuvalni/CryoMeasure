@@ -195,7 +195,7 @@
               <label for="Rate" class="col-form-label">Rate</label>
             </div>
             <div class="col-auto">
-              <input type="text" id="Rate" class="form-control" aria-describedby="TempSetPoint">
+              <input type="text" id="Rate" class="form-control" aria-describedby="Rate" disabled>
             </div>
           </div>
 
@@ -221,7 +221,13 @@
                     <input type="text" id="D" class="form-control" aria-describedby="D">
                   </div>
             </div>
+          <button type="button" class="btn btn-outline-primary btn-lg" onclick="setPID()">Set PID</button>
         </div>
+
+      script type="text/javascript">
+        function setpid(){
+        }
+      </script>
 
         <script type="text/javascript">
         function change_channel(e){
