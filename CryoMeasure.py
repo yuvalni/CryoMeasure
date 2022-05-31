@@ -165,7 +165,7 @@ def Temp_loop():
     global setPoint
     global PID_On
     global P,I,D
-    setPoint=290
+    setPoint=0
     P = 1
     I = 0
     D = 0
@@ -244,6 +244,7 @@ def Handle_Output():
                 OP = min_Output
             ser.write("on_{}\n\r".format(OP).encode())
             OP_actual = ser.readline()
+            print(OP_actual)
         eel.sleep(0.1)
 
 
