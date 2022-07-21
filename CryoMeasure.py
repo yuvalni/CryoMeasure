@@ -238,7 +238,11 @@ def TempRateLoop():
 def Handle_Output():
     """This takes the output value from Temperature loop and handle it.
     First Output to Heater, then  send value to the GUI."""
-    ser = serial.Serial('COM3',baudrate=11520,timeout=1)
+    try:
+        ser = serial.Serial('COM3',baudrate=11520,timeout=1)
+    except:
+        print("could not connect to heater.")
+        return False
     max_Output = 100
     min_Output = 0
     while True:
