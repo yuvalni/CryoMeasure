@@ -28,6 +28,7 @@ halt_meas = Event()
 stop_RT = Event()
 stop_T = Event()
 setpoint_changed = Event()
+setpoint_rate_changed = Event()
 pid_changed = Event()
 
 measurement_lock = Event()
@@ -37,6 +38,8 @@ error_name = 'No error'
 cooling_timeout = 3600
 
 setPoint = 280
+setpointrate = 0
+rate_set_point = 0
 Channel_list = [1,2,3,4]
 Temperature = -999
 Temp_rate = 0.01
@@ -201,15 +204,26 @@ def Temp_loop():
 
 
 @eel.expose
-def change_PID_setpoint(_set_point):
+def change_PID_setpoint(_set_point,_rate):
     # This maybe not a good idea. the setpoint should be set
     #within the python script as a part of rate
     #maybe add a setpoint option to the GUI?
     print("Set point changed to:")
     print(_set_point)
+    print(_rate)
     global setPoint
-    setPoint = _set_point
-    setpoint_changed.set()
+    global setpointrate
+    global rate_set_point
+    if float(_rate) ==0:
+        setPoint = _set_point
+        setpointrate = 0
+        setpoint_changed.set()
+    else:
+        setpointrate = float(_rate)
+        rate_set_point = float(_set_point)
+        setpoint_rate_changed.set()
+
+
 
 @eel.expose
 def change_PID_parameters(p,i,d):
@@ -233,8 +247,28 @@ def toggle_PID_ON(_state):
 
 def TempRateLoop():
     """ This get a rate from the gui, and changes setpoint with time"""
+    global setpointrate
+    global rate_set_point
+    global setPoint
+    while True:
+        if setpoint_rate_changed.is_set():
+            rate = setpointrate
+            sp = rate_set_point
+            setpoint_rate_changed.clear()
+        if rate == 0:
+            continue
+        else:
+            while(setPoint!=sp):
+                setPoint += rate/60.0 * (sp-setPoint)/abs(setPoint-sp)
+                setpoint_changed.set()
+                eel.sleep(1.0)
+            rate = 0
 
-    pass
+
+
+
+
+
 
 def Handle_Output():
     """This takes the output value from Temperature loop and handle it.

@@ -195,7 +195,7 @@
               <label for="Rate" class="col-form-label">Rate</label>
             </div>
             <div class="col-auto">
-              <input type="text" id="Rate" class="form-control" aria-describedby="Rate" disabled>
+              <input type="text" id="Rate" class="form-control" aria-describedby="Rate">
             </div>
           </div>
 
@@ -241,7 +241,8 @@
 
         function set_setpoint(){
         sp = parseFloat(document.getElementById("SetPoint").value)
-        eel.change_PID_setpoint(sp)
+        rate = parseFloat(document.getElementById("Rate").value)
+        eel.change_PID_setpoint(sp,rate)
         }
 
         function set_PID_state(e){
