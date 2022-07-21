@@ -233,6 +233,7 @@ def toggle_PID_ON(_state):
 
 def TempRateLoop():
     """ This get a rate from the gui, and changes setpoint with time"""
+
     pass
 
 def Handle_Output():
@@ -243,16 +244,18 @@ def Handle_Output():
     except:
         print("could not connect to heater.")
         return False
+    print("connected to Heater")
     max_Output = 100
     min_Output = 0
     while True:
-        if HeaterOutput_Q.not_empty:
+        if not HeaterOutput_Q.empty():
             OP = HeaterOutput_Q.get()
             if OP > max_Output:
                 OP = max_Output
             elif OP < min_Output:
                 OP = min_Output
             ser.write("on_{}\n\r".format(OP).encode())
+            print("Output: "+ str(OP))
             #OP_actual = ser.readline()
 
 
