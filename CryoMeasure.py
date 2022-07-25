@@ -19,7 +19,7 @@ from simple_pid import PID
 
 RT_data_q = Queue()
 q_temp = Queue()
-Tq = Queue()
+#Tq = Queue()
 HeaterOutput_Q = Queue()
 transport_parameter_q = Queue(maxsize=1)
 Channel_list = []
@@ -28,7 +28,7 @@ halt_meas = Event()
 stop_RT = Event()
 stop_T = Event()
 setpoint_changed = Event()
-setpoint_rate_changed = Event()
+ramp_rate_changed = Event()
 pid_changed = Event()
 
 measurement_lock = Event()
@@ -38,8 +38,8 @@ error_name = 'No error'
 cooling_timeout = 3600
 
 setPoint = 280
-setpointrate = 0
-rate_set_point = 0
+ramp_setpoint = 0
+ramp_rate = 0
 Channel_list = [1,2,3,4]
 Temperature = -999
 Temp_rate = 0.01
@@ -198,7 +198,7 @@ def Temp_loop():
         if PID_On:
             HeaterOutput_Q.put(HeaterOutput)
 
-        Tq.put(Temperature)
+        #Tq.put(Temperature)
         eel.send_T_data(Temperature)
         eel.sleep(Temp_rate)
 
@@ -212,16 +212,16 @@ def change_PID_setpoint(_set_point,_rate):
     print(_set_point)
     print(_rate)
     global setPoint
-    global setpointrate
-    global rate_set_point
+    global ramp_setpoint
+    global ramp_rate
     if float(_rate) ==0:
         setPoint = _set_point
-        setpointrate = 0
+        ramp_rate = 0
         setpoint_changed.set()
     else:
-        setpointrate = float(_rate)
-        rate_set_point = float(_set_point)
-        setpoint_rate_changed.set()
+        ramp_rate = float(_rate)
+        ramp_setpoint = float(_set_point)
+        ramp_rate_changed.set()
 
 
 
@@ -247,19 +247,21 @@ def toggle_PID_ON(_state):
 
 def TempRateLoop():
     """ This get a rate from the gui, and changes setpoint with time"""
-    global setpointrate
-    global rate_set_point
+    global ramp_setpoint
+    global ramp_rate
     global setPoint
     while True:
-        if setpoint_rate_changed.is_set():
-            rate = setpointrate
-            sp = rate_set_point
+        if ramp_rate_changed.is_set():
+            rate = ramp_rate
+            sp = ramp_setpoint
+            direction = (sp-setPoint)/abs((sp-setPoint)) #1 if we need to warmup
             setpoint_rate_changed.clear()
         if rate == 0:
             continue
         else:
-            while(setPoint!=sp):
-                setPoint += rate/60.0 * (sp-setPoint)/abs(setPoint-sp)
+            while(direction*setPoint<sp*direction): #if heating - setPoint is smaller then desired, else setpoint is higher
+                #rate is in kelvin per minute. every second change with rate per second
+                setPoint += rate/60.0 * direction
                 setpoint_changed.set()
                 eel.sleep(1.0)
             rate = 0
@@ -272,7 +274,7 @@ def TempRateLoop():
 
 def Handle_Output():
     """This takes the output value from Temperature loop and handle it.
-    First Output to Heater, then  send value to the GUI."""
+    First Outpsetpointut to Heater, then  send value to the GUI."""
     try:
         ser = serial.Serial('COM3',baudrate=11520,timeout=1)
     except:
