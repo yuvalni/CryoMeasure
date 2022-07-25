@@ -19,7 +19,7 @@ from simple_pid import PID
 
 RT_data_q = Queue()
 q_temp = Queue()
-Tq = Queue()
+#Tq = Queue()
 HeaterOutput_Q = Queue()
 transport_parameter_q = Queue(maxsize=1)
 Channel_list = []
@@ -28,6 +28,8 @@ halt_meas = Event()
 stop_RT = Event()
 stop_T = Event()
 setpoint_changed = Event()
+ramp_rate_changed = Event()
+pid_changed = Event()
 
 measurement_lock = Event()
 
@@ -36,6 +38,8 @@ error_name = 'No error'
 cooling_timeout = 3600
 
 setPoint = 280
+ramp_setpoint = 0
+ramp_rate = 0
 Channel_list = [1,2,3,4]
 Temperature = -999
 Temp_rate = 0.01
@@ -105,7 +109,7 @@ def initialize_keithley2400(I,V_comp,nplc,current_range=0.001,voltage_range = 0.
     eel.sleep(10 / 1000)
 
     #setting voltage read params
-    sourcemeter.measure_voltage(nplc,voltage_range,auto_range=False)
+    sourcemeter.measure_voltage(nplc,voltage_range,auto_range=True)
     sleep(10 / 1000)
     sourcemeter.write(":SYST:BEEP:STAT OFF")
 
@@ -163,9 +167,14 @@ def Temp_loop():
     global Temperature
     global setPoint
     global PID_On
+    global P,I,D
+    setPoint=0
+    P = 1
+    I = 0
+    D = 0
     PID_On = False
     HeaterOutput = 0
-    pid = PID(1,0,0,setpoint=setPoint)
+    pid = PID(P,I,D,setpoint=setPoint)
     pid.sample_time = Temp_rate
     pid.output_limits = (0,100)
 
@@ -176,42 +185,118 @@ def Temp_loop():
         #Use a queue? maybe a global variable?
         if setpoint_changed.is_set():
             pid.setpoint = setPoint
-            setpoint_changed.clear()
 
+            setpoint_changed.clear()
+        if pid_changed.is_set():
+            pid.Kp = P
+            pid.Ki = I
+            pid.Kd = D
+
+            pid_changed.clear()
         Temperature = meter_196.getTemp()
         HeaterOutput = pid(Temperature)
-        HeaterOutput_Q.put(HeaterOutput)
+        if PID_On:
+            HeaterOutput_Q.put(HeaterOutput)
 
-        Tq.put(Temperature)
+        #Tq.put(Temperature)
         eel.send_T_data(Temperature)
         eel.sleep(Temp_rate)
 
 
 @eel.expose
-def change_PID_setpoint(_set_point):
+def change_PID_setpoint(_set_point,_rate):
     # This maybe not a good idea. the setpoint should be set
     #within the python script as a part of rate
     #maybe add a setpoint option to the GUI?
+    print("Set point changed to:")
+    print(_set_point)
+    print(_rate)
     global setPoint
-    setPoint = _set_point
-    setpoint_changed.set()
+    global ramp_setpoint
+    global ramp_rate
+    if float(_rate) ==0:
+        setPoint = _set_point
+        ramp_rate = 0
+        setpoint_changed.set()
+    else:
+        ramp_rate = float(_rate)
+        ramp_setpoint = float(_set_point)
+        ramp_rate_changed.set()
+
+
 
 @eel.expose
-def change_PID_parameters(P,I,D):
-    raise NotImplementedError
+def change_PID_parameters(p,i,d):
+    global P,I,D
+    print("changed PID values:")
+    print((p,i,d))
+    if p:
+        P = p
+    if i:
+        I = i
+    if d:
+        D = d
+    pid_changed.set()
+
+@eel.expose
+def toggle_PID_ON(_state):
+    global PID_On
+    PID_On = _state
+
 
 
 def TempRateLoop():
     """ This get a rate from the gui, and changes setpoint with time"""
-    pass
+    global ramp_setpoint
+    global ramp_rate
+    global setPoint
+    while True:
+        if ramp_rate_changed.is_set():
+            rate = ramp_rate
+            sp = ramp_setpoint
+            direction = (sp-setPoint)/abs((sp-setPoint)) #1 if we need to warmup
+            setpoint_rate_changed.clear()
+        if rate == 0:
+            continue
+        else:
+            while(direction*setPoint<sp*direction): #if heating - setPoint is smaller then desired, else setpoint is higher
+                #rate is in kelvin per minute. every second change with rate per second
+                setPoint += rate/60.0 * direction
+                setpoint_changed.set()
+                eel.sleep(1.0)
+            rate = 0
+
+
+
+
+
+
 
 def Handle_Output():
     """This takes the output value from Temperature loop and handle it.
-    First Output to Heater, then  send value to the GUI."""
-    ser = serial.Serial('COM3',baudrate=11520)
-    max_out = 65535
+    First Outpsetpointut to Heater, then  send value to the GUI."""
+    try:
+        ser = serial.Serial('COM3',baudrate=11520,timeout=1)
+    except:
+        print("could not connect to heater.")
+        return False
+    print("connected to Heater")
+    max_Output = 100
+    min_Output = 0
+    while True:
+        if not HeaterOutput_Q.empty():
+            OP = HeaterOutput_Q.get()
+            if OP > max_Output:
+                OP = max_Output
+            elif OP < min_Output:
+                OP = min_Output
+            ser.write("on_{}\n\r".format(OP).encode())
+            print("Output: "+ str(OP))
+            #OP_actual = ser.readline()
 
-    pass
+
+        eel.sleep(0.1)
+
 
 def Get_stable_temp(k196,rate,meas_num,start_temp,Std_bound):
     logging.info('get stable temp')
@@ -353,4 +438,6 @@ def send_measure_data_to_page():
 
 
 eel.spawn(Temp_loop)
+eel.spawn(Handle_Output)
+
 eel.start('main.html')
