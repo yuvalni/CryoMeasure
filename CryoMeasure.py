@@ -261,6 +261,7 @@ def TempRateLoop():
             direction = (sp-setPoint)/abs((sp-setPoint)) #1 if we need to warmup
             ramp_rate_changed.clear()
         if rate == 0:
+
             continue
         else:
             while(direction*setPoint<sp*direction): #if heating - setPoint is smaller then desired, else setpoint is higher
