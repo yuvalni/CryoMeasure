@@ -250,18 +250,21 @@ def TempRateLoop():
     global ramp_setpoint
     global ramp_rate
     global setPoint
+    rate = ramp_rate
     while True:
+        eel.sleep(0.1)
         if ramp_rate_changed.is_set():
             rate = ramp_rate
             sp = ramp_setpoint
             direction = (sp-setPoint)/abs((sp-setPoint)) #1 if we need to warmup
-            setpoint_rate_changed.clear()
+            ramp_rate_changed.clear()
         if rate == 0:
             continue
         else:
             while(direction*setPoint<sp*direction): #if heating - setPoint is smaller then desired, else setpoint is higher
                 #rate is in kelvin per minute. every second change with rate per second
                 setPoint += rate/60.0 * direction
+                print(setPoint)
                 setpoint_changed.set()
                 eel.sleep(1.0)
             rate = 0
@@ -439,5 +442,5 @@ def send_measure_data_to_page():
 
 eel.spawn(Temp_loop)
 eel.spawn(Handle_Output)
-
+eel.spawn(TempRateLoop)
 eel.start('main.html')
