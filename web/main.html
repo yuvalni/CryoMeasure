@@ -27,6 +27,17 @@
         T_div = document.getElementById('current_Temp');
         T_div.innerText = T.toFixed(2);;
         }
+       eel.expose(send_SP_data)
+      function send_SP_data(SP){
+        SP_div = document.getElementById('current_SP');
+        SP_div.innerText = SP.toFixed(2);;
+        }
+
+      eel.expose(send_OP_data)
+      function send_OP_data(OP){
+        OP_div = document.getElementById('current_OP');
+        OP_div.innerText = OP.toFixed(2);;
+        }
   </script>
   </head>
   <body>
@@ -207,19 +218,19 @@
               <label for="P" class="col-form-label">P</label>
             </div>
             <div class="col">
-              <input type="text" id="P" class="form-control" aria-describedby="P">
+              <input type="string" id="P" class="form-control" aria-describedby="P" value="1">
             </div>
             <div class="col">
               <label for="I" class="col-form-label">I</label>
             </div>
             <div class="col">
-              <input type="text" id="I" class="form-control" aria-describedby="I">
+              <input type="string" id="I" class="form-control" aria-describedby="I" value="0">
             </div>
             <div class="col">
               <label for="D" class="col-form-label">D</label>
             </div>
               <div class="col">
-             <input type="text" id="D" class="form-control" aria-describedby="D">
+             <input type="string" id="D" class="form-control" aria-describedby="D" value="0">
             </div>
           </div>
 

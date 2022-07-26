@@ -185,7 +185,7 @@ def Temp_loop():
         #Use a queue? maybe a global variable?
         if setpoint_changed.is_set():
             pid.setpoint = setPoint
-
+            eel.send_SP_data(setPoint)
             setpoint_changed.clear()
         if pid_changed.is_set():
             pid.Kp = P
@@ -197,6 +197,8 @@ def Temp_loop():
         HeaterOutput = pid(Temperature)
         if PID_On:
             HeaterOutput_Q.put(HeaterOutput)
+        else:
+            HeaterOutput_Q.put(0)
 
         #Tq.put(Temperature)
         eel.send_T_data(Temperature)
@@ -264,7 +266,6 @@ def TempRateLoop():
             while(direction*setPoint<sp*direction): #if heating - setPoint is smaller then desired, else setpoint is higher
                 #rate is in kelvin per minute. every second change with rate per second
                 setPoint += rate/60.0 * direction
-                print(setPoint)
                 setpoint_changed.set()
                 eel.sleep(1.0)
             rate = 0
@@ -294,7 +295,8 @@ def Handle_Output():
             elif OP < min_Output:
                 OP = min_Output
             ser.write("on_{}\n\r".format(OP).encode())
-            print("Output: "+ str(OP))
+            #print("Output: "+ str(OP))
+            eel.send_OP_data(OP)
             #OP_actual = ser.readline()
 
 
