@@ -281,7 +281,7 @@ def Handle_Output():
     """This takes the output value from Temperature loop and handle it.
     First Outpsetpointut to Heater, then  send value to the GUI."""
     try:
-        ser = serial.Serial('COM3',baudrate=11520,timeout=1)
+        ser = serial.Serial('COM5',baudrate=11520,timeout=1)
     except:
         print("could not connect to heater.")
         return False
@@ -295,7 +295,8 @@ def Handle_Output():
                 OP = max_Output
             elif OP < min_Output:
                 OP = min_Output
-            ser.write("on_{}\n\r".format(OP).encode())
+
+            ser.write("{}\n".format(int(OP)).encode())
             #print("Output: "+ str(OP))
             eel.send_OP_data(OP)
             #OP_actual = ser.readline()
