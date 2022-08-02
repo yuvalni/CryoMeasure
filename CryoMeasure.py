@@ -74,6 +74,7 @@ def update_keithley_parameters(sourcemeter):
     sourcemeter.compliance_voltage = compliance
     sourcemeter.source_current = current
     sourcemeter.voltage_nplc = nplc
+    print("Updated")
 
 def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
     logging.debug('path is {}'.format(path))
@@ -90,7 +91,7 @@ def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
     return csv_file, writer
 
 
-def initialize_keithley2400(I,V_comp,nplc,current_range=0.001,voltage_range = 0.1,address="GPIB1::16::INSTR"):
+def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 1.0,address="GPIB1::16::INSTR"):
     #transport_parameter_q.get(block=False) #if there is some update for keithley for some reason- remove it.
     assert nplc > 0.01 and nplc <= 10
     V_comp = float(V_comp)
@@ -103,13 +104,13 @@ def initialize_keithley2400(I,V_comp,nplc,current_range=0.001,voltage_range = 0.
     eel.sleep(10/1000)
     sourcemeter.wires = 4  # set to 4 wires
     eel.sleep(10 / 1000)
-    sourcemeter.apply_current(current_range,V_comp)
+    sourcemeter.apply_current(current_range=None, compliance_voltage=V_comp)
     eel.sleep(10 / 1000)
     sourcemeter.source_current = I
     eel.sleep(10 / 1000)
 
     #setting voltage read params
-    sourcemeter.measure_voltage(nplc,voltage_range,auto_range=False)
+    sourcemeter.measure_voltage(nplc,voltage_range,auto_range=True)
     sleep(10 / 1000)
     sourcemeter.write(":SYST:BEEP:STAT OFF")
 
@@ -417,7 +418,7 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True)
             #print("R{0}: {1}".format(channel,(data["Resistance {0} [Ohm]".format(channel)])))
 
         writer.writerow(data) #this takes a dictionary and fill in the columns
-        if transport_parameter_q.full(): #there is update waiting
+        if not transport_parameter_q.empty(): #there is update waiting
             update_keithley_parameters(keithley) #update!
 
         eel.sleep(rate)
