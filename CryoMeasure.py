@@ -72,7 +72,7 @@ def update_transport(current,compliance,nplc):
 def update_keithley_parameters(sourcemeter):
     current,compliance,nplc = transport_parameter_q.get(block=False)
     sourcemeter.compliance_voltage = compliance
-    sourcemeter.source_current = current
+    sourcemeter.source_current = current/1000
     sourcemeter.voltage_nplc = nplc
     print("Updated")
 
