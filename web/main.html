@@ -27,6 +27,17 @@
         T_div = document.getElementById('current_Temp');
         T_div.innerText = T.toFixed(2);;
         }
+       eel.expose(send_SP_data)
+      function send_SP_data(SP){
+        SP_div = document.getElementById('current_SP');
+        SP_div.innerText = SP.toFixed(2);;
+        }
+
+      eel.expose(send_OP_data)
+      function send_OP_data(OP){
+        OP_div = document.getElementById('current_OP');
+        OP_div.innerText = OP.toFixed(2);;
+        }
   </script>
   </head>
   <body>
@@ -172,7 +183,7 @@
               <label for="NPLC" min=0.001 max=10 class="col-form-label">NPLC</label>
             </div>
             <div class="col-auto">
-              <input type="number" id="NPLC" value=2 class="form-control" aria-describedby="TempSetPoint">
+              <input type="number" id="NPLC" value=5 class="form-control" aria-describedby="TempSetPoint">
             </div>
           </div>
 
@@ -192,15 +203,77 @@
 
           <div class="row g-3 align-items-center">
             <div class="col-auto">
-              <label for="Rate" class="col-form-label">Rate</label>
+              <label for="Rate" class="col-form-label">Rate [K/min]</label>
             </div>
             <div class="col-auto">
-              <input type="text" id="Rate" class="form-control" aria-describedby="TempSetPoint">
+              <input type="text" id="Rate" class="form-control" aria-describedby="Rate">
             </div>
           </div>
 
-          <button type="button" class="btn btn-outline-primary btn-lg">Set</button>
+          <button type="button" class="btn btn-outline-primary btn-lg" onclick="set_setpoint()">Set</button>
+
+          <h2>PID</h2>
+          <div class="row g-3 align-items-center">
+            <div class="col">
+              <label for="P" class="col-form-label">P</label>
+            </div>
+            <div class="col">
+              <input type="string" id="P" class="form-control" aria-describedby="P" value="1">
+            </div>
+            <div class="col">
+              <label for="I" class="col-form-label">I</label>
+            </div>
+            <div class="col">
+              <input type="string" id="I" class="form-control" aria-describedby="I" value="0">
+            </div>
+            <div class="col">
+              <label for="D" class="col-form-label">D</label>
+            </div>
+              <div class="col">
+             <input type="string" id="D" class="form-control" aria-describedby="D" value="0">
+            </div>
+          </div>
+
+
+    <div class="row g-3 align-items-center">
+      <div class="col-auto">
+     <input class="" type="checkbox" role="switch" id="PID_ON" onchange="set_PID_state(this)">
+        <label class="form-check-label" for="ch1">PID on</label>
         </div>
+      <div class="col-auto">
+      <div class="badge bg-light">SetPoint:<span id="current_SP"></span> [K]</div>
+        </div>
+
+          <div class="col-auto">
+      <div class="badge bg-danger" >Output:<span id="current_OP"></span> %</div>
+        </div>
+
+          </div>
+          <button type="button" class="btn btn-outline-primary btn-lg" onclick="setPID()">Set PID</button>
+
+        </div>
+
+            <script type="text/javascript">
+        function setPID(){
+        p = parseFloat(document.getElementById("P").value)
+        i = parseFloat(document.getElementById("I").value)
+        d = parseFloat(document.getElementById("D").value)
+        eel.change_PID_parameters(p,i,d)
+        }
+
+        function set_setpoint(){
+        sp = parseFloat(document.getElementById("SetPoint").value)
+        rate = parseFloat(document.getElementById("Rate").value)
+        eel.change_PID_setpoint(sp,rate)
+        }
+
+        function set_PID_state(e){
+        console.log(e.checked)
+        eel.toggle_PID_ON(e.checked)
+        }
+      </script>
+
+
 
         <script type="text/javascript">
         function change_channel(e){
@@ -228,6 +301,7 @@
           console.log(channels)
         }
         </script>
+
         <div class="chSelect rounded border border-secondary bg-light">
           <div class="form-check form-switch">
           <input class="form-check-input" type="checkbox" role="switch" id="ch1" onchange="change_channel(this)" checked>

@@ -72,8 +72,9 @@ def update_transport(current,compliance,nplc):
 def update_keithley_parameters(sourcemeter):
     current,compliance,nplc = transport_parameter_q.get(block=False)
     sourcemeter.compliance_voltage = compliance
-    sourcemeter.source_current = current
+    sourcemeter.source_current = current/1000
     sourcemeter.voltage_nplc = nplc
+    print("Updated")
 
 def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
     logging.debug('path is {}'.format(path))
@@ -90,7 +91,7 @@ def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
     return csv_file, writer
 
 
-def initialize_keithley2400(I,V_comp,nplc,current_range=0.001,voltage_range = 0.1,address="GPIB1::16::INSTR"):
+def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.1,address="GPIB1::16::INSTR"):
     #transport_parameter_q.get(block=False) #if there is some update for keithley for some reason- remove it.
     assert nplc > 0.01 and nplc <= 10
     V_comp = float(V_comp)
@@ -103,7 +104,7 @@ def initialize_keithley2400(I,V_comp,nplc,current_range=0.001,voltage_range = 0.
     eel.sleep(10/1000)
     sourcemeter.wires = 4  # set to 4 wires
     eel.sleep(10 / 1000)
-    sourcemeter.apply_current(current_range,V_comp)
+    sourcemeter.apply_current(current_range=None, compliance_voltage=V_comp)
     eel.sleep(10 / 1000)
     sourcemeter.source_current = I
     eel.sleep(10 / 1000)
@@ -185,18 +186,21 @@ def Temp_loop():
         #Use a queue? maybe a global variable?
         if setpoint_changed.is_set():
             pid.setpoint = setPoint
-
+            eel.send_SP_data(setPoint)
             setpoint_changed.clear()
         if pid_changed.is_set():
             pid.Kp = P
             pid.Ki = I
             pid.Kd = D
-
             pid_changed.clear()
         Temperature = meter_196.getTemp()
         HeaterOutput = pid(Temperature)
         if PID_On:
+            print(HeaterOutput)
             HeaterOutput_Q.put(HeaterOutput)
+        else:
+            HeaterOutput_Q.put(0)
+
 
         #Tq.put(Temperature)
         eel.send_T_data(Temperature)
@@ -218,6 +222,7 @@ def change_PID_setpoint(_set_point,_rate):
         setPoint = _set_point
         ramp_rate = 0
         setpoint_changed.set()
+        ramp_rate_changed.set()
     else:
         ramp_rate = float(_rate)
         ramp_setpoint = float(_set_point)
@@ -241,6 +246,7 @@ def change_PID_parameters(p,i,d):
 @eel.expose
 def toggle_PID_ON(_state):
     global PID_On
+    print(_state)
     PID_On = _state
 
 
@@ -250,12 +256,14 @@ def TempRateLoop():
     global ramp_setpoint
     global ramp_rate
     global setPoint
+    rate = ramp_rate
     while True:
+        eel.sleep(0.1)
         if ramp_rate_changed.is_set():
             rate = ramp_rate
             sp = ramp_setpoint
             direction = (sp-setPoint)/abs((sp-setPoint)) #1 if we need to warmup
-            setpoint_rate_changed.clear()
+            ramp_rate_changed.clear()
         if rate == 0:
             continue
         else:
@@ -264,6 +272,10 @@ def TempRateLoop():
                 setPoint += rate/60.0 * direction
                 setpoint_changed.set()
                 eel.sleep(1.0)
+                if ramp_rate_changed.is_set():
+                    rate = ramp_rate
+                    if rate ==0:
+                        break
             rate = 0
 
 
@@ -276,7 +288,7 @@ def Handle_Output():
     """This takes the output value from Temperature loop and handle it.
     First Outpsetpointut to Heater, then  send value to the GUI."""
     try:
-        ser = serial.Serial('COM3',baudrate=11520,timeout=1)
+        ser = serial.Serial('COM5',baudrate=11520,timeout=1)
     except:
         print("could not connect to heater.")
         return False
@@ -290,12 +302,14 @@ def Handle_Output():
                 OP = max_Output
             elif OP < min_Output:
                 OP = min_Output
-            ser.write("on_{}\n\r".format(OP).encode())
-            print("Output: "+ str(OP))
+            ser.write("{}\n".format(int(OP)).encode())
+            #print("Output: "+ str(OP))
+            eel.send_OP_data(OP)
             #OP_actual = ser.readline()
 
 
-        eel.sleep(0.1)
+        eel.sleep(0.01)
+
 
 
 def Get_stable_temp(k196,rate,meas_num,start_temp,Std_bound):
@@ -410,7 +424,7 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True)
             #print("R{0}: {1}".format(channel,(data["Resistance {0} [Ohm]".format(channel)])))
 
         writer.writerow(data) #this takes a dictionary and fill in the columns
-        if transport_parameter_q.full(): #there is update waiting
+        if not transport_parameter_q.empty(): #there is update waiting
             update_keithley_parameters(keithley) #update!
 
         eel.sleep(rate)
@@ -439,5 +453,5 @@ def send_measure_data_to_page():
 
 eel.spawn(Temp_loop)
 eel.spawn(Handle_Output)
-
+eel.spawn(TempRateLoop)
 eel.start('main.html')
