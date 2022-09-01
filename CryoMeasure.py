@@ -91,7 +91,7 @@ def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
     return csv_file, writer
 
 
-def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 1.0,address="GPIB1::16::INSTR"):
+def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.1,address="GPIB1::16::INSTR"):
     #transport_parameter_q.get(block=False) #if there is some update for keithley for some reason- remove it.
     assert nplc > 0.01 and nplc <= 10
     V_comp = float(V_comp)
@@ -110,7 +110,7 @@ def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 1.0
     eel.sleep(10 / 1000)
 
     #setting voltage read params
-    sourcemeter.measure_voltage(nplc,voltage_range,auto_range=True)
+    sourcemeter.measure_voltage(nplc,voltage_range,auto_range=False)
     sleep(10 / 1000)
     sourcemeter.write(":SYST:BEEP:STAT OFF")
 
@@ -197,6 +197,7 @@ def Temp_loop():
         Temperature = meter_196.getTemp()
         HeaterOutput = pid(Temperature)
         if PID_On:
+            print(HeaterOutput)
             HeaterOutput_Q.put(HeaterOutput)
         else:
             HeaterOutput_Q.put(0)
@@ -221,6 +222,7 @@ def change_PID_setpoint(_set_point,_rate):
         setPoint = _set_point
         ramp_rate = 0
         setpoint_changed.set()
+        ramp_rate_changed.set()
     else:
         ramp_rate = float(_rate)
         ramp_setpoint = float(_set_point)
@@ -244,6 +246,7 @@ def change_PID_parameters(p,i,d):
 @eel.expose
 def toggle_PID_ON(_state):
     global PID_On
+    print(_state)
     PID_On = _state
 
 
@@ -262,7 +265,6 @@ def TempRateLoop():
             direction = (sp-setPoint)/abs((sp-setPoint)) #1 if we need to warmup
             ramp_rate_changed.clear()
         if rate == 0:
-
             continue
         else:
             while(direction*setPoint<sp*direction): #if heating - setPoint is smaller then desired, else setpoint is higher
@@ -270,6 +272,10 @@ def TempRateLoop():
                 setPoint += rate/60.0 * direction
                 setpoint_changed.set()
                 eel.sleep(1.0)
+                if ramp_rate_changed.is_set():
+                    rate = ramp_rate
+                    if rate ==0:
+                        break
             rate = 0
 
 
@@ -303,7 +309,7 @@ def Handle_Output():
             #OP_actual = ser.readline()
 
 
-        eel.sleep(0.1)
+        eel.sleep(0.01)
 
 
 def Get_stable_temp(k196,rate,meas_num,start_temp,Std_bound):
