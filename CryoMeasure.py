@@ -455,6 +455,7 @@ def start_IV_measure(low_current,high_current,number_of_points,voltage_comp,nplc
                     data["Voltage {0} [V]".format(channel)] = V
                     data["current {0} [mA]".format(channel)] = current
                     rows.append(data) #gather rows
+                    eel.sleep(rate)
                     #print("R{0}: {1}".format(channel,(data["Resistance {0} [Ohm]".format(channel)])))
 
             for row in rows: #write all rows
@@ -462,7 +463,7 @@ def start_IV_measure(low_current,high_current,number_of_points,voltage_comp,nplc
             if not transport_parameter_q.empty(): #there is update waiting
                 update_keithley_parameters(keithley) #update!
 
-            eel.sleep(rate)
+
             halt_meas.set() #this is just to avoid thinking
 
         halt_meas.clear()
