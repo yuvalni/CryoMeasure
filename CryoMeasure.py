@@ -18,6 +18,7 @@ import csv
 from simple_pid import PID
 
 RT_data_q = Queue()
+
 q_temp = Queue()
 #Tq = Queue()
 HeaterOutput_Q = Queue()
@@ -86,6 +87,20 @@ def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
         i = i +1
     csv_file = open(file_path, 'w', newline='')
     fieldnames = ['Temperature','Resistance 1 [Ohm]','current 1 [mA]','Resistance 2 [Ohm]','current 2 [mA]','Resistance 3 [Ohm]','current 3 [mA]','Resistance 4 [Ohm]','current 4 [mA]','Time','Cernox_Resistance [Ohm]']
+    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+    writer.writeheader()
+    return csv_file, writer
+
+def initialize_IV_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
+    logging.debug('path is {}'.format(path))
+    print(path)
+    file_path = os.path.join(path,"{}_IV.csv".format(file_name))
+    i=1
+    while os.path.exists(file_path):
+        file_path = os.path.join(path,"{}_IV".format(file_name)+str(i)+".csv")
+        i = i +1
+    csv_file = open(file_path, 'w', newline='')
+    fieldnames = ['Temperature','Voltage 1 [V]','current 1 [mA]', 'Voltage 2 [V]','current 2 [mA]','Voltage 3 [V]','current 3 [mA]','Voltage 4 [V]','current 4 [mA]','Time']
     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
     writer.writeheader()
     return csv_file, writer
@@ -162,6 +177,15 @@ def measure_resistance(sourcemeter,AC=True):
         return -999, 0
     else:
         return (V_p - V_m)/(2*I),I
+
+def measure_voltage(sourcemeter,current):
+    sourcemeter.source_current = current
+    eel.sleep(0.001)
+    V = sourcemeter.voltage
+    sourcemeter.disable_source()
+    return V
+
+
 
 
 def Temp_loop():
@@ -386,6 +410,69 @@ def halt_measurement():
     logging.info('sending stop command.')
     halt_meas.set()
 
+
+def start_IV_measure(low_current,high_current,number_of_points,voltage_comp,nplc_speed,sample_name,rate):
+    if measurement_lock.is_set():
+        return False
+    measurement_lock.set()
+    nplc_speed = float(nplc_speed)
+    current = float(current) * 10**-3 #converting mA from frontend to Ampere for device
+    voltage_comp = float(voltage_comp)
+    rate = float(rate)
+
+
+    currents = np.linspace(float(low_current),float(high_current),float(number_of_points))
+
+    logging.info('start IV meas.')
+    eel.set_meas_status(True)
+    stop_RT.clear()
+    stop_T.clear()
+    halt_meas.clear()
+    csv_file, writer = initialize_IV_file(sample_name)
+    #fieldnames = ['Temperature','Voltage 1 [V]','current 1 [mA]', 'Voltage 2 [V]','current 2 [mA]','Voltage 3 [V]','current 3 [mA]','Voltage 4 [V]','current 4 [mA]','Time']
+    switch = initialize_Switch()
+    keithley = initialize_keithley2400(current,voltage_comp,nplc_speed) # return keith2400 object
+    print('start measurement')
+    logging.debug('start measurement')
+    eel.spawn(send_measure_data_to_page) ## start messaging function to the page
+    eel.sleep(0.5)
+        while not halt_meas.is_set():
+            # get new ch list
+            data = {}
+            rows = [] # save all values and write them at once
+            #data["Cernox_Resistance [Ohm]"] = meter_196.get_voltage() * 10**5
+            #print("temperature: {}".format(data["Temperature"]))
+
+            _Channel_list = Channel_list # update local channel list from global only before and after for loop
+            for channel in _Channel_list:
+                Switch_to(channel, switch)
+                for current in currents:
+                    data["Time"] = dt.now()
+                    data["Temperature"] = Temperature
+                    V= measure_voltage(keithley,current)
+                    RT_data_q.put((current,V,channel))
+                    #fix this:
+                    data["Voltage {0} [V]".format(channel)] = V
+                    data["current {0} [mA]".format(channel)] = current
+                    rows.append(data) #gather rows
+                    #print("R{0}: {1}".format(channel,(data["Resistance {0} [Ohm]".format(channel)])))
+
+            for row in rows: #write all rows
+                writer.writerow(row) #this takes a dictionary and fill in the columns
+            if not transport_parameter_q.empty(): #there is update waiting
+                update_keithley_parameters(keithley) #update!
+
+            eel.sleep(rate)
+            halt_meas.set() #this is just to avoid thinking
+
+        halt_meas.clear()
+        #TODO: here remove the lock
+        stop_RT.set()
+        stop_T.set()
+        measurement_lock.clear()
+        eel.set_meas_status(False)
+        eel.enable_start_button()
+        csv_file.close()
 
 @eel.expose
 def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True):
