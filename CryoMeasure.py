@@ -34,7 +34,7 @@ pid_changed = Event()
 measurement_lock = Event()
 
 error = Event()
-error_name = 'No error'
+error_name = 'No error' 
 cooling_timeout = 3600
 
 setPoint = 280
@@ -91,7 +91,7 @@ def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
     return csv_file, writer
 
 
-def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.1,address="GPIB1::16::INSTR"):
+def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.01,address="GPIB1::16::INSTR"):
     #transport_parameter_q.get(block=False) #if there is some update for keithley for some reason- remove it.
     assert nplc > 0.01 and nplc <= 10
     V_comp = float(V_comp)
@@ -108,6 +108,7 @@ def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.1
     eel.sleep(10 / 1000)
     sourcemeter.source_current = I
     eel.sleep(10 / 1000)
+
 
     #setting voltage read params
     sourcemeter.measure_voltage(nplc,voltage_range,auto_range=True)
@@ -196,7 +197,7 @@ def Temp_loop():
         Temperature = meter_196.getTemp()
         HeaterOutput = pid(Temperature)
         if PID_On:
-            print(HeaterOutput)
+            #print(HeaterOutput)
             HeaterOutput_Q.put(HeaterOutput)
         else:
             HeaterOutput_Q.put(0)
@@ -386,6 +387,7 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True)
     if measurement_lock.is_set():
         return False
     measurement_lock.set()
+    print("start measurement")
     #TODO: HERE set a flag to lock start mesurements
     #TODO: Make sure that this function canot be called before lock is unset. either by creating a new function that calls this one,
     # or disabling the START button in gui.
@@ -417,6 +419,8 @@ def start_cont_measure(current,voltage_comp,nplc_speed,sample_name,rate,AC=True)
         _Channel_list = Channel_list # update local channel list from global only before and after for loop
         for channel in _Channel_list:
             Switch_to(channel, switch)
+
+
             R, I = measure_resistance(keithley,AC)
             RT_data_q.put((data["Temperature"],R,channel))
             data["Resistance {0} [Ohm]".format(channel)] = R
