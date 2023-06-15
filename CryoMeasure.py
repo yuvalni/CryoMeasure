@@ -247,7 +247,7 @@ def change_PID_parameters(p,i,d):
 @eel.expose
 def toggle_PID_ON(_state):
     global PID_On
-    print(_state)
+    print("PID state: " + _state)
     PID_On = _state
 
 
@@ -273,7 +273,13 @@ def TempRateLoop():
                 setPoint += rate/60.0 * direction
                 setpoint_changed.set()
                 eel.sleep(1.0)
+                if(direction*setPoint>sp*direction):
+                    #this to make sure the loop is ending exatcly on the end temperature
+                    setPoint = sp
+                    setpoint_changed.set()
+                    break
                 if ramp_rate_changed.is_set():
+                    #if the temperature is set with rate 0 while in this loop, we want to break from it.
                     rate = ramp_rate
                     if rate ==0:
                         break
