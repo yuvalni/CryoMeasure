@@ -1,6 +1,6 @@
 # CryoMeasure
 a sotware used for resistance vs. temperature measurements for our lab's [cryostat system]().<br>
-The gui is built using the [Eel](https://github.com/ChrisKnott/Eel) library, and bootstrap.
+The gui is built using the [Eel](https://github.com/ChrisKnott/Eel) library, bootstrap and chat.js .
 
 ## components
 We have a keithley2400 and a keithley7001 for the 4-channel resistance measurements.<br>
