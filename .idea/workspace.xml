@@ -2,11 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="44616507-c56f-4c9c-ac58-7b51c2b0a6de" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/web/chart.min.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CryoMeasure.py" beforeDir="false" afterPath="$PROJECT_DIR$/CryoMeasure.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Keithley196V2.py" beforeDir="false" afterPath="$PROJECT_DIR$/Keithley196V2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/main.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/main.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

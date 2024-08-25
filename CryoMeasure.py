@@ -91,17 +91,22 @@ def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
     return csv_file, writer
 
 
-def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.01,address="GPIB1::16::INSTR"):
+def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.0001,address="GPIB1::16::INSTR"):
     #transport_parameter_q.get(block=False) #if there is some update for keithley for some reason- remove it.
     assert nplc > 0.01 and nplc <= 10
     V_comp = float(V_comp)
     nplc = float(nplc)
     I = float(I)
+
+
     sourcemeter = Keithley2400(address)
     sourcemeter.reset()
+    #sourcemeter.reset_buffer()
     #setting current params
     sourcemeter.use_front_terminals()
     eel.sleep(10/1000)
+    sourcemeter.measure_voltage(nplc=nplc,voltage=0.1,auto_range=True)
+    eel.sleep(10 / 1000)
     sourcemeter.wires = 4  # set to 4 wires
     eel.sleep(10 / 1000)
     sourcemeter.apply_current(current_range=None, compliance_voltage=V_comp)
@@ -111,8 +116,8 @@ def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.0
 
 
     #setting voltage read params
-    sourcemeter.measure_voltage(nplc,voltage_range,auto_range=True)
-    sleep(10 / 1000)
+
+    eel.sleep(10 / 1000)
     sourcemeter.write(":SYST:BEEP:STAT OFF")
 
     #Checking for errors
@@ -153,7 +158,7 @@ def measure_resistance(sourcemeter,AC=True):
     sourcemeter.source_current = I
     #sourcemeter.shutdown() # turning the current off. not the device!
     sourcemeter.disable_source()
-
+    
     # Checking for errors
     error_name = sourcemeter.error  # need to change to the right code
     if not error_name[1] == 'No error':
@@ -247,7 +252,10 @@ def change_PID_parameters(p,i,d):
 @eel.expose
 def toggle_PID_ON(_state):
     global PID_On
-    print("PID state: " + _state)
+    if _state:
+        print("PID state: on")
+    else:
+        print("PID state: off")
     PID_On = _state
 
 
@@ -263,11 +271,14 @@ def TempRateLoop():
         if ramp_rate_changed.is_set():
             rate = ramp_rate
             sp = ramp_setpoint
+            if sp == setPoint:
+                continue
             direction = (sp-setPoint)/abs((sp-setPoint)) #1 if we need to warmup
             ramp_rate_changed.clear()
         if rate == 0:
             continue
         else:
+            print("starting ramp")
             while(direction*setPoint<sp*direction): #if heating - setPoint is smaller then desired, else setpoint is higher
                 #rate is in kelvin per minute. every second change with rate per second
                 setPoint += rate/60.0 * direction
