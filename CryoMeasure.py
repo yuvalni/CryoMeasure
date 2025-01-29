@@ -91,7 +91,7 @@ def initialize_file(file_name,path=r"C:\Users\Amit\Documents\RT data"):
     return csv_file, writer
 
 
-def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.0001,address="GPIB1::16::INSTR"):
+def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.0001,address="GPIB1::17::INSTR"):
     #transport_parameter_q.get(block=False) #if there is some update for keithley for some reason- remove it.
     assert nplc > 0.01 and nplc <= 10
     V_comp = float(V_comp)
@@ -106,7 +106,6 @@ def initialize_keithley2400(I,V_comp,nplc,current_range=0.01,voltage_range = 0.0
     sourcemeter.use_front_terminals()
     eel.sleep(10/1000)
     sourcemeter.measure_voltage(nplc=nplc,voltage=0.1,auto_range=True)
-    eel.sleep(10 / 1000)
     sourcemeter.wires = 4  # set to 4 wires
     eel.sleep(10 / 1000)
     sourcemeter.apply_current(current_range=None, compliance_voltage=V_comp)
