@@ -1,5 +1,12 @@
 import pyvisa
 from datetime import datetime as dt
+import random
+
+class MockUp():
+    def getTemp(self):
+        return 199+random.random()*5
+    def close(self):
+        return True
 
 class Keithley196():
     def __init__(self,address='GPIB1::7::INSTR'):

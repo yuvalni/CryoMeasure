@@ -1,6 +1,15 @@
 import pyvisa
 
-
+class MockUp():
+    def Close_Channel(self,ch):
+        return True
+    def Open_Channel(self,ch):
+        return True
+    def Open_all_Channels(self,ch):
+        return True
+    def initialize(self):
+        return True
+    
 class Switch():
     def __init__(self, address='GPIB1::6::INSTR'):
         self.inst = pyvisa.ResourceManager().open_resource(address)
